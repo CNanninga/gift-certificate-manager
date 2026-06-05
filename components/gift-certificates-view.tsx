@@ -14,7 +14,7 @@ import {
   type SortState,
 } from "@/lib/gift-certificate-filters";
 
-interface GiftCertificateExplorerProps {
+interface GiftCertificatesViewProps {
   /** Rows already filtered and sorted on the server. */
   giftCertificates: GiftCertificate[];
   /** Total number of certificates before filtering. */
@@ -29,16 +29,17 @@ interface GiftCertificateExplorerProps {
 const FILTER_DEBOUNCE_MS = 300;
 
 /**
- * Client controller for the listing. It does not filter or sort itself;
+ * Top-level client view for the listing page. Owns the page chrome (header)
+ * and the filter/sort interactions. It does not filter or sort itself;
  * instead it translates UI interactions into URL changes, and the server
  * re-renders the rows. The URL is the single source of truth.
  */
-export function GiftCertificateExplorer({
+export function GiftCertificatesView({
   giftCertificates,
   totalCount,
   filters,
   sort,
-}: GiftCertificateExplorerProps) {
+}: GiftCertificatesViewProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
@@ -113,29 +114,40 @@ export function GiftCertificateExplorer({
   }
 
   return (
-    <div>
-      <GiftCertificateFiltersPanel
-        filters={draft}
-        onChange={handleFiltersChange}
-        onReset={handleReset}
-        canReset={hasActiveFilters(draft)}
-      />
+    <div className="min-h-full bg-zinc-50 dark:bg-black">
+      <main className="mx-auto w-full max-w-6xl px-6 py-12">
+        <header className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Gift Certificates
+          </h1>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            View, sort, and filter gift certificates purchased on your store.
+          </p>
+        </header>
 
-      <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
-        Showing {giftCertificates.length} of {totalCount} certificate
-        {totalCount === 1 ? "" : "s"}
-        {hasActiveFilters(filters) ? " (filtered)" : ""}.
-      </p>
-
-      <div
-        className={`transition-opacity ${isPending ? "opacity-60" : "opacity-100"}`}
-      >
-        <GiftCertificateTable
-          giftCertificates={giftCertificates}
-          sort={sort}
-          onSort={handleSort}
+        <GiftCertificateFiltersPanel
+          filters={draft}
+          onChange={handleFiltersChange}
+          onReset={handleReset}
+          canReset={hasActiveFilters(draft)}
         />
-      </div>
+
+        <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
+          Showing {giftCertificates.length} of {totalCount} certificate
+          {totalCount === 1 ? "" : "s"}
+          {hasActiveFilters(filters) ? " (filtered)" : ""}.
+        </p>
+
+        <div
+          className={`transition-opacity ${isPending ? "opacity-60" : "opacity-100"}`}
+        >
+          <GiftCertificateTable
+            giftCertificates={giftCertificates}
+            sort={sort}
+            onSort={handleSort}
+          />
+        </div>
+      </main>
     </div>
   );
 }
