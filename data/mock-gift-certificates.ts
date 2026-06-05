@@ -1,4 +1,4 @@
-import type { GiftCertificate } from "@/features/gift-certificates/types";
+import type { GiftCertificate } from "@/types";
 
 /**
  * Mock gift certificates used while the UI is built out ahead of real data.

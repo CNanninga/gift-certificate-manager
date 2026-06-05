@@ -1,6 +1,6 @@
-import type { GiftCertificate } from "@/features/gift-certificates/types";
-import { formatCurrency, formatDate } from "@/features/gift-certificates/lib/format";
-import { RegisteredCustomerBadge } from "@/features/gift-certificates/components/registered-customer-badge";
+import type { GiftCertificate } from "@/types";
+import { formatCurrency, formatDate } from "@/lib/format";
+import { RegisteredCustomerBadge } from "@/components/registered-customer-badge";
 
 interface GiftCertificateTableProps {
   giftCertificates: GiftCertificate[];

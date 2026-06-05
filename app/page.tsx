@@ -1,5 +1,5 @@
-import { GiftCertificateTable } from "@/features/gift-certificates/components/gift-certificate-table";
-import { mockGiftCertificates } from "@/features/gift-certificates/data/mock-gift-certificates";
+import { GiftCertificateTable } from "@/components/gift-certificate-table";
+import { mockGiftCertificates } from "@/data/mock-gift-certificates";
 
 export default function Home() {
   const giftCertificates = mockGiftCertificates;
