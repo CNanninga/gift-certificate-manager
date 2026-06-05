@@ -155,3 +155,100 @@ export function sortGiftCertificates(
     return ((aValue as number) - (bValue as number)) * factor;
   });
 }
+
+/** Ordering applied when the URL specifies no (valid) sort. */
+export const DEFAULT_SORT: SortState = {
+  column: "purchaseDate",
+  direction: "desc",
+};
+
+const SORTABLE_COLUMNS: SortableColumn[] = [
+  "code",
+  "balance",
+  "recipientName",
+  "recipientEmail",
+  "hasRegisteredCustomer",
+  "purchaseDate",
+];
+
+function parseNumberParam(value: string | null): number | null {
+  if (value === null || value.trim() === "") {
+    return null;
+  }
+  const parsed = Number.parseFloat(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+/**
+ * Reads filter state out of URL search params. Unknown or missing params fall
+ * back to the "no filter" defaults so the URL is the single source of truth.
+ */
+export function searchParamsToFilters(
+  params: URLSearchParams,
+): GiftCertificateFilters {
+  const registered = params.get("registered");
+  return {
+    code: params.get("code") ?? "",
+    recipientName: params.get("recipient") ?? "",
+    recipientEmail: params.get("email") ?? "",
+    registered: registered === "yes" || registered === "no" ? registered : "all",
+    balanceMin: parseNumberParam(params.get("balanceMin")),
+    balanceMax: parseNumberParam(params.get("balanceMax")),
+    purchaseDateFrom: params.get("from") ?? "",
+    purchaseDateTo: params.get("to") ?? "",
+  };
+}
+
+/** Reads sort state out of URL search params, validating against known columns. */
+export function searchParamsToSort(params: URLSearchParams): SortState {
+  const column = params.get("sort") as SortableColumn | null;
+  const direction = params.get("dir");
+  return {
+    column:
+      column && SORTABLE_COLUMNS.includes(column)
+        ? column
+        : DEFAULT_SORT.column,
+    direction:
+      direction === "asc" || direction === "desc"
+        ? direction
+        : DEFAULT_SORT.direction,
+  };
+}
+
+/**
+ * Serializes filter and sort state into URL search params, omitting anything
+ * at its default so shared/bookmarked URLs stay clean.
+ */
+export function toSearchParams(
+  filters: GiftCertificateFilters,
+  sort: SortState,
+): URLSearchParams {
+  const params = new URLSearchParams();
+
+  if (filters.code.trim()) params.set("code", filters.code.trim());
+  if (filters.recipientName.trim()) {
+    params.set("recipient", filters.recipientName.trim());
+  }
+  if (filters.recipientEmail.trim()) {
+    params.set("email", filters.recipientEmail.trim());
+  }
+  if (filters.registered !== "all") params.set("registered", filters.registered);
+  if (filters.balanceMin !== null) {
+    params.set("balanceMin", String(filters.balanceMin));
+  }
+  if (filters.balanceMax !== null) {
+    params.set("balanceMax", String(filters.balanceMax));
+  }
+  if (filters.purchaseDateFrom) params.set("from", filters.purchaseDateFrom);
+  if (filters.purchaseDateTo) params.set("to", filters.purchaseDateTo);
+
+  if (
+    sort.column !== DEFAULT_SORT.column ||
+    sort.direction !== DEFAULT_SORT.direction
+  ) {
+    params.set("sort", sort.column);
+    params.set("dir", sort.direction);
+  }
+
+  return params;
+}

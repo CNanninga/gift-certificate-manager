@@ -1,74 +1,141 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import type { GiftCertificate } from "@/types";
 import { GiftCertificateFiltersPanel } from "@/components/gift-certificate-filters";
 import { GiftCertificateTable } from "@/components/gift-certificate-table";
 import {
   emptyFilters,
-  filterGiftCertificates,
   hasActiveFilters,
-  sortGiftCertificates,
+  toSearchParams,
   type GiftCertificateFilters,
   type SortableColumn,
   type SortState,
 } from "@/lib/gift-certificate-filters";
 
 interface GiftCertificateExplorerProps {
+  /** Rows already filtered and sorted on the server. */
   giftCertificates: GiftCertificate[];
+  /** Total number of certificates before filtering. */
+  totalCount: number;
+  /** Current filter state, parsed from the URL on the server. */
+  filters: GiftCertificateFilters;
+  /** Current sort state, parsed from the URL on the server. */
+  sort: SortState;
 }
 
-const DEFAULT_SORT: SortState = { column: "purchaseDate", direction: "desc" };
+/** Delay before text edits hit the URL, to avoid a round-trip per keystroke. */
+const FILTER_DEBOUNCE_MS = 300;
 
 /**
- * Client-side container that owns the filter and sort state for the listing
- * and derives the visible rows from the full data set passed in by the server.
+ * Client controller for the listing. It does not filter or sort itself;
+ * instead it translates UI interactions into URL changes, and the server
+ * re-renders the rows. The URL is the single source of truth.
  */
 export function GiftCertificateExplorer({
   giftCertificates,
+  totalCount,
+  filters,
+  sort,
 }: GiftCertificateExplorerProps) {
-  const [filters, setFilters] = useState<GiftCertificateFilters>(emptyFilters);
-  const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
 
-  const visible = useMemo(() => {
-    const filtered = filterGiftCertificates(giftCertificates, filters);
-    return sortGiftCertificates(filtered, sort);
-  }, [giftCertificates, filters, sort]);
+  // Local mirror of the filter form so inputs stay responsive while the
+  // server re-filters in the background.
+  const [draft, setDraft] = useState<GiftCertificateFilters>(filters);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Clicking a column toggles direction when already active, else selects it.
-  function handleSort(column: SortableColumn) {
-    setSort((current) =>
-      current.column === column
-        ? {
-            column,
-            direction: current.direction === "asc" ? "desc" : "asc",
-          }
-        : { column, direction: "asc" },
-    );
+  // Re-sync the form when the server sends new state (e.g. back/forward nav).
+  // Adjusting state during render is React's recommended way to reset state in
+  // response to a prop change, avoiding an extra effect pass.
+  const filtersKey = JSON.stringify(filters);
+  const [syncedKey, setSyncedKey] = useState(filtersKey);
+  if (filtersKey !== syncedKey) {
+    setSyncedKey(filtersKey);
+    setDraft(filters);
   }
 
-  const filtersActive = hasActiveFilters(filters);
+  // Clean up any pending debounce on unmount.
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  function pushParams(
+    nextFilters: GiftCertificateFilters,
+    nextSort: SortState,
+  ) {
+    const queryString = toSearchParams(nextFilters, nextSort).toString();
+    const url = queryString ? `${pathname}?${queryString}` : pathname;
+    startTransition(() => {
+      router.replace(url, { scroll: false });
+    });
+  }
+
+  function handleFiltersChange(next: GiftCertificateFilters) {
+    setDraft(next);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      pushParams(next, sort);
+    }, FILTER_DEBOUNCE_MS);
+  }
+
+  function handleReset() {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    setDraft(emptyFilters);
+    pushParams(emptyFilters, sort);
+  }
+
+  function handleSort(column: SortableColumn) {
+    const nextSort: SortState =
+      sort.column === column
+        ? { column, direction: sort.direction === "asc" ? "desc" : "asc" }
+        : { column, direction: "asc" };
+
+    // Flush any pending filter edit alongside the sort so nothing is lost.
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    pushParams(draft, nextSort);
+  }
 
   return (
     <div>
       <GiftCertificateFiltersPanel
-        filters={filters}
-        onChange={setFilters}
-        onReset={() => setFilters(emptyFilters)}
-        canReset={filtersActive}
+        filters={draft}
+        onChange={handleFiltersChange}
+        onReset={handleReset}
+        canReset={hasActiveFilters(draft)}
       />
 
       <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
-        Showing {visible.length} of {giftCertificates.length} certificate
-        {giftCertificates.length === 1 ? "" : "s"}
-        {filtersActive ? " (filtered)" : ""}.
+        Showing {giftCertificates.length} of {totalCount} certificate
+        {totalCount === 1 ? "" : "s"}
+        {hasActiveFilters(filters) ? " (filtered)" : ""}.
       </p>
 
-      <GiftCertificateTable
-        giftCertificates={visible}
-        sort={sort}
-        onSort={handleSort}
-      />
+      <div
+        className={`transition-opacity ${isPending ? "opacity-60" : "opacity-100"}`}
+      >
+        <GiftCertificateTable
+          giftCertificates={giftCertificates}
+          sort={sort}
+          onSort={handleSort}
+        />
+      </div>
     </div>
   );
 }
