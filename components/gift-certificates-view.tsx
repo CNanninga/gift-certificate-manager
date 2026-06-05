@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { Box, H1, Panel, Text } from "@bigcommerce/big-design";
 import type { GiftCertificate } from "@/types";
 import { GiftCertificateFiltersPanel } from "@/components/gift-certificate-filters";
 import { GiftCertificateTable } from "@/components/gift-certificate-table";
@@ -11,6 +12,7 @@ import {
   toSearchParams,
   type GiftCertificateFilters,
   type SortableColumn,
+  type SortDirection,
   type SortState,
 } from "@/lib/gift-certificate-filters";
 
@@ -99,31 +101,25 @@ export function GiftCertificatesView({
     pushParams(emptyFilters, sort);
   }
 
-  function handleSort(column: SortableColumn) {
-    const nextSort: SortState =
-      sort.column === column
-        ? { column, direction: sort.direction === "asc" ? "desc" : "asc" }
-        : { column, direction: "asc" };
-
+  // BigDesign's Table computes the next direction and reports it to us.
+  function handleSort(column: SortableColumn, direction: SortDirection) {
     // Flush any pending filter edit alongside the sort so nothing is lost.
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
     }
-    pushParams(draft, nextSort);
+    pushParams(draft, { column, direction });
   }
 
   return (
-    <div className="min-h-full bg-zinc-50 dark:bg-black">
-      <main className="mx-auto w-full max-w-6xl px-6 py-12">
-        <header className="mb-8">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Gift Certificates
-          </h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+    <Box backgroundColor="secondary20" padding={{ mobile: "medium", tablet: "xLarge" }}>
+      <Box style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <Box marginBottom="large">
+          <H1 marginBottom="xSmall">Gift Certificates</H1>
+          <Text color="secondary60" marginBottom="none">
             View, sort, and filter gift certificates purchased on your store.
-          </p>
-        </header>
+          </Text>
+        </Box>
 
         <GiftCertificateFiltersPanel
           filters={draft}
@@ -132,22 +128,27 @@ export function GiftCertificatesView({
           canReset={hasActiveFilters(draft)}
         />
 
-        <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
-          Showing {giftCertificates.length} of {totalCount} certificate
-          {totalCount === 1 ? "" : "s"}
-          {hasActiveFilters(filters) ? " (filtered)" : ""}.
-        </p>
+        <Panel>
+          <Text color="secondary60">
+            Showing {giftCertificates.length} of {totalCount} certificate
+            {totalCount === 1 ? "" : "s"}
+            {hasActiveFilters(filters) ? " (filtered)" : ""}.
+          </Text>
 
-        <div
-          className={`transition-opacity ${isPending ? "opacity-60" : "opacity-100"}`}
-        >
-          <GiftCertificateTable
-            giftCertificates={giftCertificates}
-            sort={sort}
-            onSort={handleSort}
-          />
-        </div>
-      </main>
-    </div>
+          <Box
+            style={{
+              opacity: isPending ? 0.6 : 1,
+              transition: "opacity 150ms ease",
+            }}
+          >
+            <GiftCertificateTable
+              giftCertificates={giftCertificates}
+              sort={sort}
+              onSort={handleSort}
+            />
+          </Box>
+        </Panel>
+      </Box>
+    </Box>
   );
 }
