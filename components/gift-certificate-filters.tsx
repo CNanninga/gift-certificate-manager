@@ -1,9 +1,11 @@
 "use client";
 
 import { Datepicker, Grid, Input, Panel, Select } from "@bigcommerce/big-design";
-import type {
-  GiftCertificateFilters,
-  RegisteredFilter,
+import {
+  GIFT_CERTIFICATE_STATUSES,
+  type GiftCertificateFilters,
+  type RegisteredFilter,
+  type StatusFilter,
 } from "@/lib/gift-certificate-filters";
 
 interface GiftCertificateFiltersPanelProps {
@@ -103,6 +105,18 @@ export function GiftCertificateFiltersPanel({
           ]}
           value={filters.registered}
           onOptionChange={(value) => update("registered", value ?? "all")}
+        />
+        <Select<StatusFilter>
+          label="Status"
+          options={[
+            { value: "all", content: "Any" },
+            ...GIFT_CERTIFICATE_STATUSES.map((status) => ({
+              value: status,
+              content: status,
+            })),
+          ]}
+          value={filters.status}
+          onOptionChange={(value) => update("status", value ?? "all")}
         />
         <Input
           label="Min balance"

@@ -11,6 +11,13 @@ export interface Party {
   email: string;
 }
 
+/** Lifecycle state of a gift certificate. */
+export type GiftCertificateStatus =
+  | "Active"
+  | "Expired"
+  | "Pending"
+  | "Disabled";
+
 export interface GiftCertificate {
   /** Stable identifier used for routing to the detail view. */
   id: string;
@@ -31,6 +38,8 @@ export interface GiftCertificate {
    * the store. Drives the ability to transfer the balance to store credit.
    */
   hasRegisteredCustomer: boolean;
+  /** Current lifecycle status; only "Active" certificates can be acted on. */
+  status: GiftCertificateStatus;
   /** ISO 8601 timestamp of when the certificate was purchased. */
   purchaseDate: string;
 }

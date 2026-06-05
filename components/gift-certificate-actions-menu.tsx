@@ -10,14 +10,17 @@ interface GiftCertificateActionsMenuProps {
 }
 
 /**
- * Row actions menu built on BigDesign's Dropdown. "Transfer to Credit" is
- * disabled (with an explanatory tooltip) when the recipient has no account.
- * Resend/Transfer are placeholders for now.
+ * Row actions menu built on BigDesign's Dropdown. Only "View details" is
+ * available unless the certificate is Active; "Transfer to Credit"
+ * additionally requires a registered customer. Each disabled action explains
+ * itself via a tooltip. Resend/Transfer are placeholders for now.
  */
 export function GiftCertificateActionsMenu({
   giftCertificate: gc,
 }: GiftCertificateActionsMenuProps) {
   const router = useRouter();
+
+  const isActive = gc.status === "Active";
 
   return (
     <Dropdown
@@ -36,16 +39,22 @@ export function GiftCertificateActionsMenu({
         },
         {
           content: "Resend",
+          disabled: !isActive,
+          tooltip: isActive
+            ? undefined
+            : "Only active gift certificates can be resent",
           onItemClick: () => {
             // Placeholder — wired up in a later phase.
           },
         },
         {
           content: "Transfer to Credit",
-          disabled: !gc.hasRegisteredCustomer,
-          tooltip: gc.hasRegisteredCustomer
-            ? undefined
-            : "Recipient is not a registered customer",
+          disabled: !isActive || !gc.hasRegisteredCustomer,
+          tooltip: !isActive
+            ? "Only active gift certificates can be transferred"
+            : gc.hasRegisteredCustomer
+              ? undefined
+              : "Recipient is not a registered customer",
           onItemClick: () => {
             // Placeholder — wired up in a later phase.
           },

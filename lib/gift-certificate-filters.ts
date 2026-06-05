@@ -1,4 +1,4 @@
-import type { GiftCertificate } from "@/types";
+import type { GiftCertificate, GiftCertificateStatus } from "@/types";
 
 /**
  * Pure filtering and sorting logic for the gift certificate listing. Kept out
@@ -7,10 +7,12 @@ import type { GiftCertificate } from "@/types";
 
 export type SortableColumn =
   | "code"
+  | "originalAmount"
   | "balance"
   | "recipientName"
   | "recipientEmail"
   | "hasRegisteredCustomer"
+  | "status"
   | "purchaseDate";
 
 export type SortDirection = "asc" | "desc";
@@ -22,11 +24,22 @@ export interface SortState {
 
 export type RegisteredFilter = "all" | "yes" | "no";
 
+export type StatusFilter = "all" | GiftCertificateStatus;
+
+/** The selectable lifecycle statuses, used for filtering and validation. */
+export const GIFT_CERTIFICATE_STATUSES: GiftCertificateStatus[] = [
+  "Active",
+  "Expired",
+  "Pending",
+  "Disabled",
+];
+
 export interface GiftCertificateFilters {
   code: string;
   recipientName: string;
   recipientEmail: string;
   registered: RegisteredFilter;
+  status: StatusFilter;
   /** Inclusive lower/upper bounds on remaining balance; null means unbounded. */
   balanceMin: number | null;
   balanceMax: number | null;
@@ -40,6 +53,7 @@ export const emptyFilters: GiftCertificateFilters = {
   recipientName: "",
   recipientEmail: "",
   registered: "all",
+  status: "all",
   balanceMin: null,
   balanceMax: null,
   purchaseDateFrom: "",
@@ -53,6 +67,7 @@ export function hasActiveFilters(filters: GiftCertificateFilters): boolean {
     filters.recipientName.trim() !== "" ||
     filters.recipientEmail.trim() !== "" ||
     filters.registered !== "all" ||
+    filters.status !== "all" ||
     filters.balanceMin !== null ||
     filters.balanceMax !== null ||
     filters.purchaseDateFrom !== "" ||
@@ -98,6 +113,9 @@ export function filterGiftCertificates(
     if (filters.registered === "no" && gc.hasRegisteredCustomer) {
       return false;
     }
+    if (filters.status !== "all" && gc.status !== filters.status) {
+      return false;
+    }
     if (filters.balanceMin !== null && gc.balance < filters.balanceMin) {
       return false;
     }
@@ -125,6 +143,8 @@ function sortValue(
   switch (column) {
     case "code":
       return gc.code;
+    case "originalAmount":
+      return gc.originalAmount;
     case "balance":
       return gc.balance;
     case "recipientName":
@@ -133,6 +153,8 @@ function sortValue(
       return gc.recipient.email;
     case "hasRegisteredCustomer":
       return gc.hasRegisteredCustomer ? 1 : 0;
+    case "status":
+      return gc.status;
     case "purchaseDate":
       return new Date(gc.purchaseDate).getTime();
   }
@@ -164,10 +186,12 @@ export const DEFAULT_SORT: SortState = {
 
 const SORTABLE_COLUMNS: SortableColumn[] = [
   "code",
+  "originalAmount",
   "balance",
   "recipientName",
   "recipientEmail",
   "hasRegisteredCustomer",
+  "status",
   "purchaseDate",
 ];
 
@@ -187,11 +211,14 @@ export function searchParamsToFilters(
   params: URLSearchParams,
 ): GiftCertificateFilters {
   const registered = params.get("registered");
+  const status = params.get("status") as GiftCertificateStatus | null;
   return {
     code: params.get("code") ?? "",
     recipientName: params.get("recipient") ?? "",
     recipientEmail: params.get("email") ?? "",
     registered: registered === "yes" || registered === "no" ? registered : "all",
+    status:
+      status && GIFT_CERTIFICATE_STATUSES.includes(status) ? status : "all",
     balanceMin: parseNumberParam(params.get("balanceMin")),
     balanceMax: parseNumberParam(params.get("balanceMax")),
     purchaseDateFrom: params.get("from") ?? "",
@@ -233,6 +260,7 @@ export function toSearchParams(
     params.set("email", filters.recipientEmail.trim());
   }
   if (filters.registered !== "all") params.set("registered", filters.registered);
+  if (filters.status !== "all") params.set("status", filters.status);
   if (filters.balanceMin !== null) {
     params.set("balanceMin", String(filters.balanceMin));
   }

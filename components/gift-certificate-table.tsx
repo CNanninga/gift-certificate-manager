@@ -10,7 +10,7 @@ import {
   type TableColumn,
   type TableSortDirection,
 } from "@bigcommerce/big-design";
-import type { GiftCertificate } from "@/types";
+import type { GiftCertificate, GiftCertificateStatus } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { GiftCertificateActionsMenu } from "@/components/gift-certificate-actions-menu";
 import type {
@@ -24,6 +24,17 @@ interface GiftCertificateTableProps {
   sort: SortState;
   onSort: (column: SortableColumn, direction: SortDirection) => void;
 }
+
+/** Badge color per lifecycle status. */
+const STATUS_VARIANT: Record<
+  GiftCertificateStatus,
+  "success" | "warning" | "secondary" | "danger"
+> = {
+  Active: "success",
+  Pending: "warning",
+  Expired: "secondary",
+  Disabled: "danger",
+};
 
 /**
  * Listing rendered with BigDesign's Table. Sorting is controlled by the URL
@@ -55,6 +66,21 @@ export function GiftCertificateTable({
           </Link>
         );
       },
+    },
+    {
+      hash: "status",
+      header: "Status",
+      isSortable: true,
+      render: (gc) => (
+        <Badge label={gc.status} variant={STATUS_VARIANT[gc.status]} />
+      ),
+    },
+    {
+      hash: "originalAmount",
+      header: "Original Value",
+      align: "right",
+      isSortable: true,
+      render: (gc) => formatCurrency(gc.originalAmount, gc.currencyCode),
     },
     {
       hash: "balance",
