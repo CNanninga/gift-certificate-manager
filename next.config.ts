@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Enable the styled-components SWC transform (SSR support, consistent class
+  // names, and better debugging) required by BigDesign.
+  compiler: {
+    styledComponents: true,
+  },
 };
 
 export default nextConfig;
