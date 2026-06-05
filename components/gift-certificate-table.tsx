@@ -1,6 +1,5 @@
 import type { GiftCertificate } from "@/types";
-import { formatCurrency, formatDate } from "@/lib/format";
-import { RegisteredCustomerBadge } from "@/components/registered-customer-badge";
+import { GiftCertificateRow } from "@/components/gift-certificate-row";
 import type {
   SortableColumn,
   SortState,
@@ -29,13 +28,14 @@ const COLUMNS: ColumnConfig[] = [
   { key: "purchaseDate", label: "Purchased", align: "left" },
 ];
 
+// Header includes one extra, non-sortable column for the row actions menu.
+const TOTAL_COLUMNS = COLUMNS.length + 1;
+
 const alignClasses: Record<Align, string> = {
   left: "text-left justify-start",
   right: "text-right justify-end",
   center: "text-center justify-center",
 };
-
-const cellClasses = "px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300";
 
 function SortIndicator({
   active,
@@ -61,7 +61,8 @@ function SortIndicator({
 
 /**
  * Central listing of all gift certificates. Column headers act as sort
- * controls; the parent owns the sort state and the ordering of rows.
+ * controls; the parent owns the sort state and the ordering of rows. Each row
+ * is interactive (navigation, hover tooltip, actions) via GiftCertificateRow.
  */
 export function GiftCertificateTable({
   giftCertificates,
@@ -99,13 +100,16 @@ export function GiftCertificateTable({
                 </th>
               );
             })}
+            <th scope="col" className="px-4 py-3">
+              <span className="sr-only">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
           {giftCertificates.length === 0 ? (
             <tr>
               <td
-                colSpan={COLUMNS.length}
+                colSpan={TOTAL_COLUMNS}
                 className="px-4 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400"
               >
                 No gift certificates match your filters.
@@ -113,32 +117,7 @@ export function GiftCertificateTable({
             </tr>
           ) : (
             giftCertificates.map((gc) => (
-              <tr
-                key={gc.id}
-                className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900"
-              >
-                <td className={`${cellClasses} font-mono font-medium text-zinc-900 dark:text-zinc-100`}>
-                  {gc.code}
-                </td>
-                <td className={`${cellClasses} text-right font-medium tabular-nums text-zinc-900 dark:text-zinc-100`}>
-                  {formatCurrency(gc.balance, gc.currencyCode)}
-                </td>
-                <td className={cellClasses}>{gc.recipient.name}</td>
-                <td className={cellClasses}>
-                  <a
-                    href={`mailto:${gc.recipient.email}`}
-                    className="text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
-                  >
-                    {gc.recipient.email}
-                  </a>
-                </td>
-                <td className={`${cellClasses} text-center`}>
-                  <RegisteredCustomerBadge value={gc.hasRegisteredCustomer} />
-                </td>
-                <td className={`${cellClasses} whitespace-nowrap`}>
-                  {formatDate(gc.purchaseDate)}
-                </td>
-              </tr>
+              <GiftCertificateRow key={gc.id} giftCertificate={gc} />
             ))
           )}
         </tbody>
