@@ -107,10 +107,10 @@ export function filterGiftCertificates(
     ) {
       return false;
     }
-    if (filters.registered === "yes" && !gc.hasRegisteredCustomer) {
+    if (filters.registered === "yes" && !gc.recipient.isRegisteredCustomer) {
       return false;
     }
-    if (filters.registered === "no" && gc.hasRegisteredCustomer) {
+    if (filters.registered === "no" && gc.recipient.isRegisteredCustomer) {
       return false;
     }
     if (filters.status !== "all" && gc.status !== filters.status) {
@@ -152,7 +152,7 @@ function sortValue(
     case "recipientEmail":
       return gc.recipient.email;
     case "hasRegisteredCustomer":
-      return gc.hasRegisteredCustomer ? 1 : 0;
+      return gc.recipient.isRegisteredCustomer ? 1 : 0;
     case "status":
       return gc.status;
     case "purchaseDate":

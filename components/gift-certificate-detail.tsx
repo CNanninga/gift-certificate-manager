@@ -1,22 +1,37 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Link, Message } from "@bigcommerce/big-design";
+import { Box, H1, Link, Tabs, Text } from "@bigcommerce/big-design";
+import type { GiftCertificate } from "@/types";
+import { GiftCertificateDetailsTab } from "@/components/gift-certificate-details-tab";
+import { GiftCertificateBalanceTab } from "@/components/gift-certificate-balance-tab";
 
 interface GiftCertificateDetailProps {
-  id: string;
+  giftCertificate: GiftCertificate;
 }
 
+const TABS = [
+  { id: "details", title: "Details" },
+  { id: "balance", title: "Balance" },
+];
+
 /**
- * Client view for a single gift certificate. Placeholder for now; this is the
- * boundary where the BigDesign detail/management UI will live.
+ * Client view for a single gift certificate, split into Details and Balance
+ * tabs.
  */
-export function GiftCertificateDetail({ id }: GiftCertificateDetailProps) {
+export function GiftCertificateDetail({
+  giftCertificate,
+}: GiftCertificateDetailProps) {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState("details");
 
   return (
-    <Box backgroundColor="secondary20" padding={{ mobile: "medium", tablet: "xLarge" }}>
-      <Box style={{ maxWidth: 800, margin: "0 auto" }}>
+    <Box
+      backgroundColor="secondary20"
+      padding={{ mobile: "medium", tablet: "xLarge" }}
+    >
+      <Box style={{ maxWidth: 900, margin: "0 auto" }}>
         <Box marginBottom="medium">
           <Link
             href="/"
@@ -29,15 +44,22 @@ export function GiftCertificateDetail({ id }: GiftCertificateDetailProps) {
           </Link>
         </Box>
 
-        <Message
-          type="info"
-          header="Under construction"
-          messages={[
-            {
-              text: `The detail and management view for ${id} is coming soon.`,
-            },
-          ]}
-        />
+        <Box marginBottom="medium">
+          <H1 marginBottom="xSmall">{giftCertificate.code}</H1>
+          <Text color="secondary60" marginBottom="none">
+            Manage this gift certificate.
+          </Text>
+        </Box>
+
+        <Tabs activeTab={activeTab} items={TABS} onTabClick={setActiveTab} />
+
+        <Box marginTop="medium">
+          {activeTab === "details" ? (
+            <GiftCertificateDetailsTab giftCertificate={giftCertificate} />
+          ) : (
+            <GiftCertificateBalanceTab giftCertificate={giftCertificate} />
+          )}
+        </Box>
       </Box>
     </Box>
   );

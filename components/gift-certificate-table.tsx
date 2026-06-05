@@ -108,8 +108,8 @@ export function GiftCertificateTable({
       isSortable: true,
       render: (gc) => (
         <Badge
-          label={gc.hasRegisteredCustomer ? "Yes" : "No"}
-          variant={gc.hasRegisteredCustomer ? "success" : "secondary"}
+          label={gc.recipient.isRegisteredCustomer ? "Yes" : "No"}
+          variant={gc.recipient.isRegisteredCustomer ? "success" : "secondary"}
         />
       ),
     },
