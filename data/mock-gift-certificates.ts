@@ -1,4 +1,10 @@
 import type { GiftCertificate } from "@/types";
+import {
+  filterGiftCertificates,
+  sortGiftCertificates,
+  type GiftCertificateFilters,
+  type SortState,
+} from "@/lib/gift-certificate-filters";
 
 /**
  * Mock gift certificates used while the UI is built out ahead of real data.
@@ -25,15 +31,32 @@ export function getGiftCertificateById(
   return mockGiftCertificates.find((giftCertificate) => giftCertificate.id === id);
 }
 
+export interface GiftCertificateQueryResult {
+  /** The filtered, sorted page of results. */
+  items: GiftCertificate[];
+  /** Total certificates in the store, before filtering. */
+  totalCount: number;
+}
+
 /**
- * Simulates fetching the full set from a backing store, with an artificial
- * randomized latency so the effect of caching is observable. Returns the same
- * deterministic data every time — only the timing varies.
+ * Simulates a backing-store query: the filter and sort are applied as part of
+ * the fetch (as a real WHERE/ORDER BY would be), not after the fact on a fully
+ * loaded set. An artificial randomized latency makes the effect of caching
+ * observable; the returned data is otherwise deterministic for given inputs.
  */
-export async function fetchGiftCertificates(): Promise<GiftCertificate[]> {
+export async function fetchGiftCertificates(
+  filters: GiftCertificateFilters,
+  sort: SortState,
+): Promise<GiftCertificateQueryResult> {
   const delayMs = 300 + Math.floor(Math.random() * 900);
   await new Promise((resolve) => setTimeout(resolve, delayMs));
-  return mockGiftCertificates;
+
+  const items = sortGiftCertificates(
+    filterGiftCertificates(mockGiftCertificates, filters),
+    sort,
+  );
+
+  return { items, totalCount: mockGiftCertificates.length };
 }
 
 export const mockGiftCertificates: GiftCertificate[] = [
