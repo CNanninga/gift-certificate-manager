@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Box, H1, Panel, Text } from "@bigcommerce/big-design";
 import type { GiftCertificate } from "@/types";
+import { Panel } from "@/components/ui";
 import { GiftCertificateFiltersPanel } from "@/components/gift-certificate-filters";
 import { GiftCertificateTable } from "@/components/gift-certificate-table";
 import {
@@ -101,7 +101,7 @@ export function GiftCertificatesView({
     pushParams(emptyFilters, sort);
   }
 
-  // BigDesign's Table computes the next direction and reports it to us.
+  // The table computes the next direction and reports it to us.
   function handleSort(column: SortableColumn, direction: SortDirection) {
     // Flush any pending filter edit alongside the sort so nothing is lost.
     if (debounceRef.current) {
@@ -112,14 +112,16 @@ export function GiftCertificatesView({
   }
 
   return (
-    <Box backgroundColor="secondary20" padding={{ mobile: "medium", tablet: "xLarge" }}>
-      <Box style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <Box marginBottom="large">
-          <H1 marginBottom="xSmall">Gift Certificates</H1>
-          <Text color="secondary60" marginBottom="none">
+    <main className="bg-slate-50 px-4 py-6 sm:px-8 sm:py-12">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-6">
+          <h1 className="text-2xl font-bold text-slate-900">
+            Gift Certificates
+          </h1>
+          <p className="mt-1 text-slate-500">
             View, sort, and filter gift certificates purchased on your store.
-          </Text>
-        </Box>
+          </p>
+        </header>
 
         <GiftCertificateFiltersPanel
           filters={draft}
@@ -129,26 +131,24 @@ export function GiftCertificatesView({
         />
 
         <Panel>
-          <Text color="secondary60">
+          <p className="mb-4 text-sm text-slate-500">
             Showing {giftCertificates.length} of {totalCount} certificate
             {totalCount === 1 ? "" : "s"}
             {hasActiveFilters(filters) ? " (filtered)" : ""}.
-          </Text>
+          </p>
 
-          <Box
-            style={{
-              opacity: isPending ? 0.6 : 1,
-              transition: "opacity 150ms ease",
-            }}
+          <div
+            className="transition-opacity duration-150"
+            style={{ opacity: isPending ? 0.6 : 1 }}
           >
             <GiftCertificateTable
               giftCertificates={giftCertificates}
               sort={sort}
               onSort={handleSort}
             />
-          </Box>
+          </div>
         </Panel>
-      </Box>
-    </Box>
+      </div>
+    </main>
   );
 }

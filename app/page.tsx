@@ -11,7 +11,7 @@ export default function Home({ searchParams }: HomeProps) {
   return (
     <Suspense
       fallback={
-        <p style={{ padding: "48px", textAlign: "center" }}>
+        <p className="p-12 text-center text-slate-500">
           Loading gift certificates…
         </p>
       }

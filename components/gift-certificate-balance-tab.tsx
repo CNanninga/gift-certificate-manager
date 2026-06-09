@@ -1,20 +1,11 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import {
-  AlertsManager,
-  Box,
-  Button,
-  createAlertsManager,
-  Flex,
-  Input,
-  Modal,
-  Panel,
-  Text,
-} from "@bigcommerce/big-design";
 import type { GiftCertificate } from "@/types";
 import { formatCurrency } from "@/lib/format";
+import { Button, Input, Modal, Panel } from "@/components/ui";
 import { FieldRow } from "@/components/detail-field";
+import { useToast } from "@/components/toast";
 import { refillGiftCertificate } from "@/app/gift-certificates/[id]/actions";
 import { initialRefillState } from "@/app/gift-certificates/[id]/refill-state";
 
@@ -39,6 +30,8 @@ export function GiftCertificateBalanceTab({
   const { originalAmount, balance, currencyCode } = gc;
   const money = (amount: number) => formatCurrency(amount, currencyCode);
 
+  const { addToast } = useToast();
+
   const [active, setActive] = useState<BalanceAction | null>(null);
   const [refillValue, setRefillValue] = useState(String(originalAmount));
   const [addAmount, setAddAmount] = useState("");
@@ -48,9 +41,8 @@ export function GiftCertificateBalanceTab({
   const canTransfer = gc.recipient.isRegisteredCustomer;
 
   // Refill is wired to a server action via a form. useActionState drives the
-  // pending state and result; the BigDesign alerts manager surfaces a toast on
+  // pending state and result; the custom toast surfaces a notification on
   // completion.
-  const [alertsManager] = useState(() => createAlertsManager());
   const [refillState, refillAction, refillPending] = useActionState(
     refillGiftCertificate,
     initialRefillState,
@@ -58,13 +50,11 @@ export function GiftCertificateBalanceTab({
 
   useEffect(() => {
     if (refillState.status === "success") {
-      alertsManager.add({
-        type: "success",
-        autoDismiss: true,
-        messages: [{ text: refillState.message }],
-      });
+      addToast(refillState.message, "success");
     }
-  }, [refillState, alertsManager]);
+    // refillState.key changes on each completion, so identical resubmits still
+    // re-fire the toast.
+  }, [refillState, addToast]);
 
   // Selecting an action reveals its inputs and hides the others. Re-selecting
   // the active action collapses it. Inputs reset to defaults on (re)selection.
@@ -114,13 +104,11 @@ export function GiftCertificateBalanceTab({
 
   return (
     <>
-      <AlertsManager manager={alertsManager} />
       <Panel header="Balance">
-      <FieldRow label="Original value">{money(originalAmount)}</FieldRow>
-      <FieldRow label="Current balance">{money(balance)}</FieldRow>
+        <FieldRow label="Original value">{money(originalAmount)}</FieldRow>
+        <FieldRow label="Current balance">{money(balance)}</FieldRow>
 
-      <Box marginTop="medium">
-        <Flex flexGap="8px" flexWrap="wrap">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Button
             variant={actionVariant("refill")}
             onClick={() => selectAction("refill")}
@@ -140,20 +128,13 @@ export function GiftCertificateBalanceTab({
           >
             Transfer to Store Credit
           </Button>
-        </Flex>
-      </Box>
+        </div>
 
-      {active && (
-        <Box
-          backgroundColor="secondary20"
-          borderRadius="normal"
-          padding="medium"
-          marginTop="medium"
-        >
-          {active === "refill" && (
-            <form action={refillAction}>
-              <Flex flexDirection="column" flexGap="12px">
-                <Box style={{ maxWidth: 280 }}>
+        {active && (
+          <div className="mt-4 rounded-md bg-slate-50 p-4">
+            {active === "refill" && (
+              <form action={refillAction} className="flex flex-col gap-3">
+                <div className="max-w-xs">
                   <Input
                     label="Refill to New Balance"
                     name="amount"
@@ -163,12 +144,12 @@ export function GiftCertificateBalanceTab({
                     value={refillValue}
                     onChange={(event) => setRefillValue(event.target.value)}
                   />
-                </Box>
-                <Text color="secondary60" marginBottom="none">
+                </div>
+                <p className="text-sm text-slate-500">
                   This will set the total active balance to this amount, up to{" "}
                   <strong>{money(originalAmount)}</strong>.
-                </Text>
-                <Box>
+                </p>
+                <div>
                   <Button
                     type="submit"
                     variant="primary"
@@ -177,95 +158,93 @@ export function GiftCertificateBalanceTab({
                   >
                     Refill
                   </Button>
-                </Box>
-              </Flex>
-            </form>
-          )}
+                </div>
+              </form>
+            )}
 
-          {active === "addToBalance" && (
-            <Flex flexDirection="column" flexGap="12px">
-              <Box style={{ maxWidth: 280 }}>
-                <Input
-                  label="Amount"
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={addAmount}
-                  onChange={(event) => setAddAmount(event.target.value)}
-                />
-              </Box>
-              <Text color="secondary60" marginBottom="none">
-                This amount will be added to the current balance.
-              </Text>
-              {newBalance !== null && addValid && (
-                <Text bold marginBottom="none">
-                  New Balance: {money(newBalance)}
-                </Text>
-              )}
-              <Box>
-                <Button
-                  variant="primary"
-                  disabled={!addValid}
-                  onClick={submitAdd}
-                >
-                  Add to Balance
-                </Button>
-              </Box>
-            </Flex>
-          )}
+            {active === "addToBalance" && (
+              <div className="flex flex-col gap-3">
+                <div className="max-w-xs">
+                  <Input
+                    label="Amount"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={addAmount}
+                    onChange={(event) => setAddAmount(event.target.value)}
+                  />
+                </div>
+                <p className="text-sm text-slate-500">
+                  This amount will be added to the current balance.
+                </p>
+                {newBalance !== null && addValid && (
+                  <p className="text-sm font-semibold text-slate-900">
+                    New Balance: {money(newBalance)}
+                  </p>
+                )}
+                <div>
+                  <Button
+                    variant="primary"
+                    disabled={!addValid}
+                    onClick={submitAdd}
+                  >
+                    Add to Balance
+                  </Button>
+                </div>
+              </div>
+            )}
 
-          {active === "transfer" && (
-            <Flex flexDirection="column" flexGap="12px">
-              <Box style={{ maxWidth: 280 }}>
-                <Input
-                  label="Amount to Transfer"
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={transferValue}
-                  onChange={(event) => setTransferValue(event.target.value)}
-                />
-              </Box>
-              <Text color="secondary60" marginBottom="none">
-                The gift certificate balance will be reduced by this amount, and
-                the customer&apos;s store credit balance will be increased
-                accordingly.
-              </Text>
-              <Box>
-                <Button
-                  variant="primary"
-                  disabled={!transferValid}
-                  onClick={complete}
-                >
-                  Transfer to Store Credit
-                </Button>
-              </Box>
-            </Flex>
-          )}
-        </Box>
-      )}
+            {active === "transfer" && (
+              <div className="flex flex-col gap-3">
+                <div className="max-w-xs">
+                  <Input
+                    label="Amount to Transfer"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={transferValue}
+                    onChange={(event) => setTransferValue(event.target.value)}
+                  />
+                </div>
+                <p className="text-sm text-slate-500">
+                  The gift certificate balance will be reduced by this amount,
+                  and the customer&apos;s store credit balance will be increased
+                  accordingly.
+                </p>
+                <div>
+                  <Button
+                    variant="primary"
+                    disabled={!transferValid}
+                    onClick={complete}
+                  >
+                    Transfer to Store Credit
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Panel>
 
       <Modal
         isOpen={confirmAddOpen}
         header="Add more than the original value?"
         onClose={() => setConfirmAddOpen(false)}
-        actions={[
-          {
-            text: "Cancel",
-            variant: "subtle",
-            onClick: () => setConfirmAddOpen(false),
-          },
-          { text: "Add anyway", variant: "primary", onClick: complete },
-        ]}
+        actions={
+          <>
+            <Button variant="subtle" onClick={() => setConfirmAddOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={complete}>
+              Add anyway
+            </Button>
+          </>
+        }
       >
-        <Text>
-          The amount entered ({addParsed !== null ? money(addParsed) : ""}) is
-          greater than this gift certificate&apos;s original value (
-          {money(originalAmount)}). Are you sure you want to add it to the
-          balance?
-        </Text>
+        The amount entered ({addParsed !== null ? money(addParsed) : ""}) is
+        greater than this gift certificate&apos;s original value (
+        {money(originalAmount)}). Are you sure you want to add it to the balance?
       </Modal>
-      </Panel>
     </>
   );
 }
