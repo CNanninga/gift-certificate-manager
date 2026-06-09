@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertsManager,
   Box,
@@ -16,7 +16,10 @@ import type { GiftCertificate } from "@/types";
 import { formatCurrency } from "@/lib/format";
 import { FieldRow } from "@/components/detail-field";
 import { refillGiftCertificate } from "@/app/gift-certificates/[id]/actions";
-import { initialRefillState } from "@/app/gift-certificates/[id]/refill-state";
+import {
+  initialRefillState,
+  type RefillActionState,
+} from "@/app/gift-certificates/[id]/refill-state";
 
 interface GiftCertificateBalanceTabProps {
   giftCertificate: GiftCertificate;
@@ -47,14 +50,28 @@ export function GiftCertificateBalanceTab({
 
   const canTransfer = gc.recipient.isRegisteredCustomer;
 
-  // Refill is wired to a server action via a form. useActionState drives the
-  // pending state and result; the BigDesign alerts manager surfaces a toast on
-  // completion.
+  // Refill is wired to the "use server" action via a form. React 18 (stable)
+  // has no useActionState/useFormState/useFormStatus, so we drive the result
+  // state and the pending state with useState and call the server action
+  // directly on submit. (startTransition does not await async callbacks on
+  // React 18, so an explicit pending flag is used instead.) The BigDesign
+  // alerts manager surfaces a toast on completion.
   const [alertsManager] = useState(() => createAlertsManager());
-  const [refillState, refillAction, refillPending] = useActionState(
-    refillGiftCertificate,
-    initialRefillState,
-  );
+  const [refillState, setRefillState] =
+    useState<RefillActionState>(initialRefillState);
+  const [refillPending, setRefillPending] = useState(false);
+
+  async function submitRefill(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    setRefillPending(true);
+    try {
+      const next = await refillGiftCertificate(refillState, formData);
+      setRefillState(next);
+    } finally {
+      setRefillPending(false);
+    }
+  }
 
   useEffect(() => {
     if (refillState.status === "success") {
@@ -151,7 +168,7 @@ export function GiftCertificateBalanceTab({
           marginTop="medium"
         >
           {active === "refill" && (
-            <form action={refillAction}>
+            <form onSubmit={submitRefill}>
               <Flex flexDirection="column" flexGap="12px">
                 <Box style={{ maxWidth: 280 }}>
                   <Input
