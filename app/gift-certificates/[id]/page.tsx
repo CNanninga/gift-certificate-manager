@@ -3,13 +3,13 @@ import { getGiftCertificateById } from "@/data/mock-gift-certificates";
 import { GiftCertificateDetail } from "@/components/gift-certificate-detail";
 
 interface GiftCertificateDetailPageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
-export default async function GiftCertificateDetailPage({
+export default function GiftCertificateDetailPage({
   params,
 }: GiftCertificateDetailPageProps) {
-  const { id } = await params;
+  const { id } = params;
   const giftCertificate = getGiftCertificateById(id);
 
   if (!giftCertificate) {

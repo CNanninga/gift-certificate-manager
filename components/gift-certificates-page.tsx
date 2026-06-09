@@ -5,7 +5,7 @@ import {
 import { GiftCertificates } from "@/components/gift-certificates";
 
 interface GiftCertificatesPageProps {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Record<string, string | string[] | undefined>;
 }
 
 /** Normalizes Next's searchParams object into a URLSearchParams instance. */
@@ -25,14 +25,14 @@ function toURLSearchParams(
 
 /**
  * Reads the dynamic request data (search params) and parses it into filter and
- * sort state, then hands those values to the cached GiftCertificates component.
+ * sort state, then hands those values to the GiftCertificates component.
  * Reading search params makes this dynamic, which is why Home renders it inside
  * a Suspense boundary.
  */
 export async function GiftCertificatesPage({
   searchParams,
 }: GiftCertificatesPageProps) {
-  const params = toURLSearchParams(await searchParams);
+  const params = toURLSearchParams(searchParams);
   const filters = searchParamsToFilters(params);
   const sort = searchParamsToSort(params);
 

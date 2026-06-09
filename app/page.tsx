@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { GiftCertificatesPage } from "@/components/gift-certificates-page";
 
 interface HomeProps {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Record<string, string | string[] | undefined>;
 }
 
 export default function Home({ searchParams }: HomeProps) {
