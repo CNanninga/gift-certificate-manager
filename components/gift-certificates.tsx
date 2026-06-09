@@ -19,7 +19,7 @@ interface GiftCertificatesProps {
  * and handed in as props — never read inside this cached scope.
  */
 export async function GiftCertificates({ filters, sort }: GiftCertificatesProps) {
-  "use cache";
+  // "use cache";
 
   const { items, totalCount } = await fetchGiftCertificates(filters, sort);
 
