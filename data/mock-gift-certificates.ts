@@ -25,6 +25,17 @@ export function getGiftCertificateById(
   return mockGiftCertificates.find((giftCertificate) => giftCertificate.id === id);
 }
 
+/**
+ * Simulates fetching the full set from a backing store, with an artificial
+ * randomized latency so the effect of caching is observable. Returns the same
+ * deterministic data every time — only the timing varies.
+ */
+export async function fetchGiftCertificates(): Promise<GiftCertificate[]> {
+  const delayMs = 300 + Math.floor(Math.random() * 900);
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
+  return mockGiftCertificates;
+}
+
 export const mockGiftCertificates: GiftCertificate[] = [
   // Active · full balance · registered recipient (account name differs)
   {
