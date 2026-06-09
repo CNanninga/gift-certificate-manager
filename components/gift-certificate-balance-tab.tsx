@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
+  AlertsManager,
   Box,
   Button,
+  createAlertsManager,
   Flex,
   Input,
   Modal,
@@ -13,6 +15,8 @@ import {
 import type { GiftCertificate } from "@/types";
 import { formatCurrency } from "@/lib/format";
 import { FieldRow } from "@/components/detail-field";
+import { refillGiftCertificate } from "@/app/gift-certificates/[id]/actions";
+import { initialRefillState } from "@/app/gift-certificates/[id]/refill-state";
 
 interface GiftCertificateBalanceTabProps {
   giftCertificate: GiftCertificate;
@@ -42,6 +46,25 @@ export function GiftCertificateBalanceTab({
   const [confirmAddOpen, setConfirmAddOpen] = useState(false);
 
   const canTransfer = gc.recipient.isRegisteredCustomer;
+
+  // Refill is wired to a server action via a form. useActionState drives the
+  // pending state and result; the BigDesign alerts manager surfaces a toast on
+  // completion.
+  const [alertsManager] = useState(() => createAlertsManager());
+  const [refillState, refillAction, refillPending] = useActionState(
+    refillGiftCertificate,
+    initialRefillState,
+  );
+
+  useEffect(() => {
+    if (refillState.status === "success") {
+      alertsManager.add({
+        type: "success",
+        autoDismiss: true,
+        messages: [{ text: refillState.message }],
+      });
+    }
+  }, [refillState, alertsManager]);
 
   // Selecting an action reveals its inputs and hides the others. Re-selecting
   // the active action collapses it. Inputs reset to defaults on (re)selection.
@@ -90,7 +113,9 @@ export function GiftCertificateBalanceTab({
   }
 
   return (
-    <Panel header="Balance">
+    <>
+      <AlertsManager manager={alertsManager} />
+      <Panel header="Balance">
       <FieldRow label="Original value">{money(originalAmount)}</FieldRow>
       <FieldRow label="Current balance">{money(balance)}</FieldRow>
 
@@ -126,31 +151,35 @@ export function GiftCertificateBalanceTab({
           marginTop="medium"
         >
           {active === "refill" && (
-            <Flex flexDirection="column" flexGap="12px">
-              <Box style={{ maxWidth: 280 }}>
-                <Input
-                  label="Refill to New Balance"
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={refillValue}
-                  onChange={(event) => setRefillValue(event.target.value)}
-                />
-              </Box>
-              <Text color="secondary60" marginBottom="none">
-                This will set the total active balance to this amount, up to{" "}
-                <strong>{money(originalAmount)}</strong>.
-              </Text>
-              <Box>
-                <Button
-                  variant="primary"
-                  disabled={!refillValid}
-                  onClick={complete}
-                >
-                  Refill
-                </Button>
-              </Box>
-            </Flex>
+            <form action={refillAction}>
+              <Flex flexDirection="column" flexGap="12px">
+                <Box style={{ maxWidth: 280 }}>
+                  <Input
+                    label="Refill to New Balance"
+                    name="amount"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={refillValue}
+                    onChange={(event) => setRefillValue(event.target.value)}
+                  />
+                </Box>
+                <Text color="secondary60" marginBottom="none">
+                  This will set the total active balance to this amount, up to{" "}
+                  <strong>{money(originalAmount)}</strong>.
+                </Text>
+                <Box>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={!refillValid || refillPending}
+                    isLoading={refillPending}
+                  >
+                    Refill
+                  </Button>
+                </Box>
+              </Flex>
+            </form>
           )}
 
           {active === "addToBalance" && (
@@ -236,6 +265,7 @@ export function GiftCertificateBalanceTab({
           balance?
         </Text>
       </Modal>
-    </Panel>
+      </Panel>
+    </>
   );
 }
