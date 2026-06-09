@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 import {
   AlertsManager,
   Box,
@@ -33,6 +34,26 @@ function parseAmount(value: string): number | null {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
+/**
+ * Submit button for the Refill form. Lives in its own component so it can read
+ * the form's pending state via useFormStatus, which only reports the status of
+ * the nearest parent <form>. The validity check is passed in as `disabled`.
+ */
+function RefillSubmitButton({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button
+      type="submit"
+      variant="primary"
+      disabled={disabled || pending}
+      isLoading={pending}
+    >
+      Refill
+    </Button>
+  );
+}
+
 export function GiftCertificateBalanceTab({
   giftCertificate: gc,
 }: GiftCertificateBalanceTabProps) {
@@ -47,11 +68,12 @@ export function GiftCertificateBalanceTab({
 
   const canTransfer = gc.recipient.isRegisteredCustomer;
 
-  // Refill is wired to a server action via a form. useActionState drives the
-  // pending state and result; the BigDesign alerts manager surfaces a toast on
-  // completion.
+  // Refill is wired to a server action via a form. useFormState (React 18 /
+  // Next 14) drives the result state; the pending state lives in the
+  // RefillSubmitButton child via useFormStatus. The BigDesign alerts manager
+  // surfaces a toast on completion.
   const [alertsManager] = useState(() => createAlertsManager());
-  const [refillState, refillAction, refillPending] = useActionState(
+  const [refillState, refillAction] = useFormState(
     refillGiftCertificate,
     initialRefillState,
   );
@@ -169,14 +191,7 @@ export function GiftCertificateBalanceTab({
                   <strong>{money(originalAmount)}</strong>.
                 </Text>
                 <Box>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={!refillValid || refillPending}
-                    isLoading={refillPending}
-                  >
-                    Refill
-                  </Button>
+                  <RefillSubmitButton disabled={!refillValid} />
                 </Box>
               </Flex>
             </form>
