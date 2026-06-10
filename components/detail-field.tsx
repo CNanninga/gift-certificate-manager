@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Box, Flex, Text } from "@bigcommerce/big-design";
 
 interface FieldRowProps {
   label: string;
@@ -8,27 +7,20 @@ interface FieldRowProps {
 
 /**
  * A single label/value row used across the detail panels. String/number values
- * are wrapped in Text; richer values (e.g. a Select) are rendered as-is.
+ * are rendered as plain text; richer values (e.g. a Select) are rendered as-is.
  */
 export function FieldRow({ label, children }: FieldRowProps) {
   const value =
     typeof children === "string" || typeof children === "number" ? (
-      <Text marginBottom="none">{children}</Text>
+      <span className="text-slate-900">{children}</span>
     ) : (
       children
     );
 
   return (
-    <Flex
-      justifyContent="space-between"
-      alignItems="center"
-      flexGap="24px"
-      marginBottom="small"
-    >
-      <Text color="secondary60" marginBottom="none">
-        {label}
-      </Text>
-      <Box style={{ textAlign: "right" }}>{value}</Box>
-    </Flex>
+    <div className="flex items-center justify-between gap-6 py-2 not-last:border-b not-last:border-slate-100">
+      <span className="text-sm text-slate-500">{label}</span>
+      <div className="text-right text-sm">{value}</div>
+    </div>
   );
 }

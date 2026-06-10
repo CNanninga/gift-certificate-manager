@@ -1,6 +1,6 @@
 "use client";
 
-import { Datepicker, Grid, Input, Panel, Select } from "@bigcommerce/big-design";
+import { Button, Input, Panel, Select } from "@/components/ui";
 import {
   GIFT_CERTIFICATE_STATUSES,
   type GiftCertificateFilters,
@@ -25,31 +25,10 @@ function parseBound(value: string): number | null {
 }
 
 /**
- * A `yyyy-mm-dd` filter value as the local-midnight string the picker wants.
- * Returns undefined (not "") when empty, since the picker does `new Date(value)`
- * and an empty string would become an Invalid Date.
- */
-function toPickerValue(ymd: string): string | undefined {
-  return ymd ? `${ymd}T00:00:00` : undefined;
-}
-
-/** Converts the picker's ISO output back to a local `yyyy-mm-dd` string. */
-function fromPickerValue(iso: string): string {
-  if (!iso) {
-    return "";
-  }
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-/**
- * Filter controls for every column, built with BigDesign form components.
- * Text columns match by substring, the registered-customer column is a select,
- * and balance and purchase date are expressed as inclusive ranges.
+ * Filter controls for every column, built with custom Tailwind form components.
+ * Text columns match by substring, the registered-customer and status columns
+ * are selects, and balance and purchase date are expressed as inclusive ranges
+ * (date ranges use native `type="date"` inputs that already emit `yyyy-mm-dd`).
  */
 export function GiftCertificateFiltersPanel({
   filters,
@@ -66,18 +45,15 @@ export function GiftCertificateFiltersPanel({
 
   return (
     <Panel
+      className="mb-6"
       header="Filters"
-      action={{
-        text: "Clear filters",
-        variant: "subtle",
-        onClick: onReset,
-        disabled: !canReset,
-      }}
+      action={
+        <Button variant="subtle" onClick={onReset} disabled={!canReset}>
+          Clear filters
+        </Button>
+      }
     >
-      <Grid
-        gridColumns={{ mobile: "1fr", tablet: "1fr 1fr", desktop: "repeat(4, 1fr)" }}
-        gridGap="16px"
-      >
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Input
           label="Certificate #"
           placeholder="e.g. GC-4F9A"
@@ -99,24 +75,24 @@ export function GiftCertificateFiltersPanel({
         <Select<RegisteredFilter>
           label="Registered customer"
           options={[
-            { value: "all", content: "Any" },
-            { value: "yes", content: "Yes" },
-            { value: "no", content: "No" },
+            { value: "all", label: "Any" },
+            { value: "yes", label: "Yes" },
+            { value: "no", label: "No" },
           ]}
           value={filters.registered}
-          onOptionChange={(value) => update("registered", value ?? "all")}
+          onValueChange={(value) => update("registered", value)}
         />
         <Select<StatusFilter>
           label="Status"
           options={[
-            { value: "all", content: "Any" },
+            { value: "all", label: "Any" },
             ...GIFT_CERTIFICATE_STATUSES.map((status) => ({
               value: status,
-              content: status,
+              label: status,
             })),
           ]}
           value={filters.status}
-          onOptionChange={(value) => update("status", value ?? "all")}
+          onValueChange={(value) => update("status", value)}
         />
         <Input
           label="Min balance"
@@ -125,7 +101,9 @@ export function GiftCertificateFiltersPanel({
           step={0.01}
           placeholder="Min"
           value={filters.balanceMin === null ? "" : String(filters.balanceMin)}
-          onChange={(event) => update("balanceMin", parseBound(event.target.value))}
+          onChange={(event) =>
+            update("balanceMin", parseBound(event.target.value))
+          }
         />
         <Input
           label="Max balance"
@@ -134,21 +112,23 @@ export function GiftCertificateFiltersPanel({
           step={0.01}
           placeholder="Max"
           value={filters.balanceMax === null ? "" : String(filters.balanceMax)}
-          onChange={(event) => update("balanceMax", parseBound(event.target.value))}
-        />
-        <Datepicker
-          label="Purchased after"
-          value={toPickerValue(filters.purchaseDateFrom)}
-          onDateChange={(iso) =>
-            update("purchaseDateFrom", fromPickerValue(iso))
+          onChange={(event) =>
+            update("balanceMax", parseBound(event.target.value))
           }
         />
-        <Datepicker
-          label="Purchased before"
-          value={toPickerValue(filters.purchaseDateTo)}
-          onDateChange={(iso) => update("purchaseDateTo", fromPickerValue(iso))}
+        <Input
+          label="Purchased after"
+          type="date"
+          value={filters.purchaseDateFrom}
+          onChange={(event) => update("purchaseDateFrom", event.target.value)}
         />
-      </Grid>
+        <Input
+          label="Purchased before"
+          type="date"
+          value={filters.purchaseDateTo}
+          onChange={(event) => update("purchaseDateTo", event.target.value)}
+        />
+      </div>
     </Panel>
   );
 }

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Box, H1, Link, Tabs, Text } from "@bigcommerce/big-design";
+import Link from "next/link";
 import type { GiftCertificate } from "@/types";
 import { GiftCertificateDetailsTab } from "@/components/gift-certificate-details-tab";
 import { GiftCertificateBalanceTab } from "@/components/gift-certificate-balance-tab";
@@ -14,7 +13,9 @@ interface GiftCertificateDetailProps {
 const TABS = [
   { id: "details", title: "Details" },
   { id: "balance", title: "Balance" },
-];
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
 
 /**
  * Client view for a single gift certificate, split into Details and Balance
@@ -23,44 +24,57 @@ const TABS = [
 export function GiftCertificateDetail({
   giftCertificate,
 }: GiftCertificateDetailProps) {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState("details");
+  const [activeTab, setActiveTab] = useState<TabId>("details");
 
   return (
-    <Box
-      backgroundColor="secondary20"
-      padding={{ mobile: "medium", tablet: "xLarge" }}
-    >
-      <Box style={{ maxWidth: 900, margin: "0 auto" }}>
-        <Box marginBottom="medium">
+    <main className="bg-slate-50 px-4 py-6 sm:px-8 sm:py-12">
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-4">
           <Link
             href="/"
-            onClick={(event) => {
-              event.preventDefault();
-              router.push("/");
-            }}
+            className="text-sm font-medium text-blue-600 hover:underline"
           >
             ← Back to gift certificates
           </Link>
-        </Box>
+        </div>
 
-        <Box marginBottom="medium">
-          <H1 marginBottom="xSmall">{giftCertificate.code}</H1>
-          <Text color="secondary60" marginBottom="none">
-            Manage this gift certificate.
-          </Text>
-        </Box>
+        <header className="mb-4">
+          <h1 className="text-2xl font-bold text-slate-900">
+            {giftCertificate.code}
+          </h1>
+          <p className="mt-1 text-slate-500">Manage this gift certificate.</p>
+        </header>
 
-        <Tabs activeTab={activeTab} items={TABS} onTabClick={setActiveTab} />
+        <div
+          role="tablist"
+          className="mb-4 flex gap-1 border-b border-slate-200"
+        >
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold transition-colors ${
+                activeTab === tab.id
+                  ? "border-blue-600 text-blue-700"
+                  : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {tab.title}
+            </button>
+          ))}
+        </div>
 
-        <Box marginTop="medium">
+        <div className="flex flex-col gap-6">
           {activeTab === "details" ? (
             <GiftCertificateDetailsTab giftCertificate={giftCertificate} />
           ) : (
             <GiftCertificateBalanceTab giftCertificate={giftCertificate} />
           )}
-        </Box>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </main>
   );
 }

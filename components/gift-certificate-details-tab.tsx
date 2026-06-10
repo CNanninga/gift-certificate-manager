@@ -1,15 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Box,
-  Button,
-  Flex,
-  Modal,
-  Panel,
-  Select,
-  Text,
-} from "@bigcommerce/big-design";
 import type {
   GiftCertificate,
   GiftCertificateStatus,
@@ -17,6 +8,7 @@ import type {
 } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { GIFT_CERTIFICATE_STATUSES } from "@/lib/gift-certificate-filters";
+import { Button, Modal, Panel, Select } from "@/components/ui";
 import { FieldRow } from "@/components/detail-field";
 
 interface GiftCertificateDetailsTabProps {
@@ -71,16 +63,16 @@ export function GiftCertificateDetailsTab({
         <FieldRow label="Gift certificate code">{gc.code}</FieldRow>
         <FieldRow label="Purchase date">{formatDate(gc.purchaseDate)}</FieldRow>
         <FieldRow label="Status">
-          <Box style={{ width: 200 }}>
+          <div className="w-48">
             <Select<GiftCertificateStatus>
+              value={status}
               options={GIFT_CERTIFICATE_STATUSES.map((value) => ({
                 value,
-                content: value,
+                label: value,
               }))}
-              value={status}
-              onOptionChange={(value) => value && setStatus(value)}
+              onValueChange={(value) => setStatus(value)}
             />
-          </Box>
+          </div>
         </FieldRow>
         <FieldRow label="Email template">{gc.emailTemplate}</FieldRow>
         <FieldRow label="Original value">
@@ -95,7 +87,7 @@ export function GiftCertificateDetailsTab({
       />
       <PartyPanel title="Recipient" party={gc.recipient} />
 
-      <Flex justifyContent="flex-end" flexGap="8px">
+      <div className="flex justify-end gap-2">
         <Button variant="subtle" onClick={() => setStatus(savedStatus)}>
           Cancel
         </Button>
@@ -109,29 +101,28 @@ export function GiftCertificateDetailsTab({
         >
           Update Status
         </Button>
-      </Flex>
+      </div>
 
       <Modal
         isOpen={resendOpen}
         header="Re-send gift certificate email?"
         onClose={() => setResendOpen(false)}
-        actions={[
-          {
-            text: "Cancel",
-            variant: "subtle",
-            onClick: () => setResendOpen(false),
-          },
-          {
-            text: "Re-send Email",
-            variant: "primary",
-            // Placeholder — wired up in a later phase.
-            onClick: () => setResendOpen(false),
-          },
-        ]}
+        actions={
+          <>
+            <Button variant="subtle" onClick={() => setResendOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              // Placeholder — wired up in a later phase.
+              onClick={() => setResendOpen(false)}
+            >
+              Re-send Email
+            </Button>
+          </>
+        }
       >
-        <Text>
-          The gift certificate email will be re-sent to the recipient.
-        </Text>
+        The gift certificate email will be re-sent to the recipient.
       </Modal>
     </>
   );
