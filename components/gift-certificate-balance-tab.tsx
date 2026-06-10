@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useState, type FormEvent } from "react";
 import type { GiftCertificate } from "@/types";
 import { formatCurrency } from "@/lib/format";
 import { Button, Input, Modal, Panel } from "@/components/ui";
@@ -40,21 +40,25 @@ export function GiftCertificateBalanceTab({
 
   const canTransfer = gc.recipient.isRegisteredCustomer;
 
-  // Refill is wired to a server action via a form. useActionState drives the
-  // pending state and result; the custom toast surfaces a notification on
-  // completion.
-  const [refillState, refillAction, refillPending] = useActionState(
-    refillGiftCertificate,
-    initialRefillState,
-  );
+  // React 18 has no useActionState / function-valued form actions, so the
+  // Refill form calls the "use server" action directly from its submit handler,
+  // tracking pending state manually and surfacing the result via the toast.
+  const [refillPending, setRefillPending] = useState(false);
 
-  useEffect(() => {
-    if (refillState.status === "success") {
-      addToast(refillState.message, "success");
+  async function handleRefillSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!refillValid) {
+      return;
     }
-    // refillState.key changes on each completion, so identical resubmits still
-    // re-fire the toast.
-  }, [refillState, addToast]);
+    const formData = new FormData(event.currentTarget);
+    setRefillPending(true);
+    try {
+      const result = await refillGiftCertificate(initialRefillState, formData);
+      addToast(result.message, "success");
+    } finally {
+      setRefillPending(false);
+    }
+  }
 
   // Selecting an action reveals its inputs and hides the others. Re-selecting
   // the active action collapses it. Inputs reset to defaults on (re)selection.
@@ -133,7 +137,7 @@ export function GiftCertificateBalanceTab({
         {active && (
           <div className="mt-4 rounded-md bg-slate-50 p-4">
             {active === "refill" && (
-              <form action={refillAction} className="flex flex-col gap-3">
+              <form onSubmit={handleRefillSubmit} className="flex flex-col gap-3">
                 <div className="max-w-xs">
                   <Input
                     label="Refill to New Balance"
