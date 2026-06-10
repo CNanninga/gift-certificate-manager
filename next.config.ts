@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   compiler: {
     styledComponents: true,
   },
+
+  logging: { fetches: { fullUrl: true } },
 };
 
 export default nextConfig;
