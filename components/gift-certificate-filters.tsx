@@ -4,7 +4,6 @@ import { Datepicker, Grid, Input, Panel, Select } from "@bigcommerce/big-design"
 import {
   GIFT_CERTIFICATE_STATUSES,
   type GiftCertificateFilters,
-  type RegisteredFilter,
   type StatusFilter,
 } from "@/lib/gift-certificate-filters";
 
@@ -95,16 +94,6 @@ export function GiftCertificateFiltersPanel({
           placeholder="Email contains…"
           value={filters.recipientEmail}
           onChange={(event) => update("recipientEmail", event.target.value)}
-        />
-        <Select<RegisteredFilter>
-          label="Registered customer"
-          options={[
-            { value: "all", content: "Any" },
-            { value: "yes", content: "Yes" },
-            { value: "no", content: "No" },
-          ]}
-          value={filters.registered}
-          onOptionChange={(value) => update("registered", value ?? "all")}
         />
         <Select<StatusFilter>
           label="Status"

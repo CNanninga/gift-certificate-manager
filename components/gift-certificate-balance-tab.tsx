@@ -48,7 +48,8 @@ export function GiftCertificateBalanceTab({
   const [transferValue, setTransferValue] = useState(String(balance));
   const [confirmAddOpen, setConfirmAddOpen] = useState(false);
 
-  const canTransfer = gc.recipient.isRegisteredCustomer;
+  // Transfer to store credit requires a remaining balance to move.
+  const canTransfer = balance > 0;
 
   // Refill is wired to the "use server" action via a form. React 18 (stable)
   // has no useActionState/useFormState/useFormStatus, so we drive the result

@@ -49,12 +49,10 @@ export function GiftCertificateActionsMenu({
         },
         {
           content: "Transfer to Credit",
-          disabled: !isActive || !gc.recipient.isRegisteredCustomer,
-          tooltip: !isActive
-            ? "Only active gift certificates can be transferred"
-            : gc.recipient.isRegisteredCustomer
-              ? undefined
-              : "Recipient is not a registered customer",
+          disabled: !isActive,
+          tooltip: isActive
+            ? undefined
+            : "Only active gift certificates can be transferred",
           onItemClick: () => {
             // Placeholder — wired up in a later phase.
           },

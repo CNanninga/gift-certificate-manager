@@ -1,4 +1,4 @@
-import { fetchGiftCertificates } from "@/data/mock-gift-certificates";
+import { fetchGiftCertificates } from "@/lib/bigcommerce/gift-certificates";
 import type {
   GiftCertificateFilters,
   SortState,

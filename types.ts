@@ -1,40 +1,21 @@
 /**
- * Domain types for the Gift Certificates feature.
- *
- * These describe the shape of a gift certificate as it will eventually be
- * returned by the store's API. For now they back the mock data in
- * `data/mock-gift-certificates.ts`.
+ * Domain types for the Gift Certificates feature. These mirror the fields
+ * returned by the BigCommerce v2 Gift Certificates API (see
+ * `lib/bigcommerce/gift-certificates.ts` for the mapping).
  */
 
-interface PartyBase {
+/**
+ * A party named on the gift certificate. The v2 API exposes only the name and
+ * email printed on the certificate (`to_name`/`to_email`, `from_name`/
+ * `from_email`); it does not indicate whether either party maps to a registered
+ * customer account — that would require a separate Customers API lookup.
+ */
+export interface Party {
   /** Name as printed on the gift certificate. */
   name: string;
   /** Email as printed on the gift certificate. */
   email: string;
-  /** Whether this party matches a registered customer account on the store. */
-  isRegisteredCustomer: boolean;
-  /**
-   * Name on the registered customer account; null when not registered. May
-   * differ from the name printed on the gift certificate.
-   */
-  accountName: string | null;
 }
-
-/**
- * The purchaser. Their registered account is matched independently of the
- * gift certificate, so the account email can differ from the one printed on it.
- */
-export interface SenderParty extends PartyBase {
-  /** Email on the registered customer account; null when not registered. */
-  accountEmail: string | null;
-}
-
-/**
- * The person the certificate was purchased for. Recipients are matched to a
- * registered customer account BY email, so the account email always equals the
- * email on the gift certificate — it isn't stored or shown separately.
- */
-export type RecipientParty = PartyBase;
 
 /** Lifecycle state of a gift certificate. */
 export type GiftCertificateStatus =
@@ -73,10 +54,10 @@ export interface GiftCertificate {
   originalAmount: number;
   /** Amount currently remaining on the certificate. */
   balance: number;
-  /** Person the certificate was purchased for. */
-  recipient: RecipientParty;
-  /** Person who purchased the certificate. */
-  sender: SenderParty;
+  /** Person the certificate was purchased for (to_name / to_email). */
+  recipient: Party;
+  /** Person who purchased the certificate (from_name / from_email). */
+  sender: Party;
   /** Email template the certificate was sent with. */
   emailTemplate: GiftCertificateEmailTemplate;
   /** Current lifecycle status; only "Active" certificates can be acted on. */

@@ -11,7 +11,6 @@ export type SortableColumn =
   | "balance"
   | "recipientName"
   | "recipientEmail"
-  | "hasRegisteredCustomer"
   | "status"
   | "purchaseDate";
 
@@ -21,8 +20,6 @@ export interface SortState {
   column: SortableColumn;
   direction: SortDirection;
 }
-
-export type RegisteredFilter = "all" | "yes" | "no";
 
 export type StatusFilter = "all" | GiftCertificateStatus;
 
@@ -38,7 +35,6 @@ export interface GiftCertificateFilters {
   code: string;
   recipientName: string;
   recipientEmail: string;
-  registered: RegisteredFilter;
   status: StatusFilter;
   /** Inclusive lower/upper bounds on remaining balance; null means unbounded. */
   balanceMin: number | null;
@@ -52,7 +48,6 @@ export const emptyFilters: GiftCertificateFilters = {
   code: "",
   recipientName: "",
   recipientEmail: "",
-  registered: "all",
   status: "all",
   balanceMin: null,
   balanceMax: null,
@@ -66,7 +61,6 @@ export function hasActiveFilters(filters: GiftCertificateFilters): boolean {
     filters.code.trim() !== "" ||
     filters.recipientName.trim() !== "" ||
     filters.recipientEmail.trim() !== "" ||
-    filters.registered !== "all" ||
     filters.status !== "all" ||
     filters.balanceMin !== null ||
     filters.balanceMax !== null ||
@@ -107,12 +101,6 @@ export function filterGiftCertificates(
     ) {
       return false;
     }
-    if (filters.registered === "yes" && !gc.recipient.isRegisteredCustomer) {
-      return false;
-    }
-    if (filters.registered === "no" && gc.recipient.isRegisteredCustomer) {
-      return false;
-    }
     if (filters.status !== "all" && gc.status !== filters.status) {
       return false;
     }
@@ -151,8 +139,6 @@ function sortValue(
       return gc.recipient.name;
     case "recipientEmail":
       return gc.recipient.email;
-    case "hasRegisteredCustomer":
-      return gc.recipient.isRegisteredCustomer ? 1 : 0;
     case "status":
       return gc.status;
     case "purchaseDate":
@@ -190,7 +176,6 @@ const SORTABLE_COLUMNS: SortableColumn[] = [
   "balance",
   "recipientName",
   "recipientEmail",
-  "hasRegisteredCustomer",
   "status",
   "purchaseDate",
 ];
@@ -210,13 +195,11 @@ function parseNumberParam(value: string | null): number | null {
 export function searchParamsToFilters(
   params: URLSearchParams,
 ): GiftCertificateFilters {
-  const registered = params.get("registered");
   const status = params.get("status") as GiftCertificateStatus | null;
   return {
     code: params.get("code") ?? "",
     recipientName: params.get("recipient") ?? "",
     recipientEmail: params.get("email") ?? "",
-    registered: registered === "yes" || registered === "no" ? registered : "all",
     status:
       status && GIFT_CERTIFICATE_STATUSES.includes(status) ? status : "all",
     balanceMin: parseNumberParam(params.get("balanceMin")),
@@ -259,7 +242,6 @@ export function toSearchParams(
   if (filters.recipientEmail.trim()) {
     params.set("email", filters.recipientEmail.trim());
   }
-  if (filters.registered !== "all") params.set("registered", filters.registered);
   if (filters.status !== "all") params.set("status", filters.status);
   if (filters.balanceMin !== null) {
     params.set("balanceMin", String(filters.balanceMin));
