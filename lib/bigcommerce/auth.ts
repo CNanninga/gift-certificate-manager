@@ -8,9 +8,31 @@
  * session). That path is stubbed to throw for now.
  */
 
+/**
+ * Where gift certificate data comes from:
+ *   - "mock"        → the in-repo mock dataset (no network); useful for tests.
+ *   - "static"      → real REST API using a single static token (STATIC_MODE).
+ *   - "multiTenant" → real REST API using a per-store OAuth token (not yet
+ *                     implemented; the token getter throws).
+ */
+export type DataSourceMode = "mock" | "static" | "multiTenant";
+
+/** Mock mode is opt-in via MOCK_MODE=true (default off). */
+export function isMockMode(): boolean {
+  return (process.env.MOCK_MODE ?? "false").toLowerCase() === "true";
+}
+
 /** Static mode is the default; only an explicit "false" disables it. */
 export function isStaticMode(): boolean {
   return (process.env.STATIC_MODE ?? "true").toLowerCase() !== "false";
+}
+
+/** Resolves the active data source from the env flags. Mock takes precedence. */
+export function getDataSourceMode(): DataSourceMode {
+  if (isMockMode()) {
+    return "mock";
+  }
+  return isStaticMode() ? "static" : "multiTenant";
 }
 
 /** The store hash used in the API URL (`/stores/:store_hash/...`). */
