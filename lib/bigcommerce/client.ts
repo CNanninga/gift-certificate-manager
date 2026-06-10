@@ -1,0 +1,49 @@
+import { getStoreHash, getStoreToken } from "@/lib/bigcommerce/auth";
+
+const API_ORIGIN = "https://api.bigcommerce.com";
+
+/** Error thrown for non-2xx BigCommerce API responses; carries the status. */
+export class BigCommerceApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly path: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "BigCommerceApiError";
+  }
+}
+
+/**
+ * Thin wrapper for BigCommerce REST requests. Prefixes the store-scoped base
+ * URL, attaches auth + JSON headers, and parses the JSON response. `path`
+ * should start with a version segment, e.g. `/v2/gift_certificates`.
+ */
+export async function bigCommerceRequest<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  const url = `${API_ORIGIN}/stores/${getStoreHash()}${path}`;
+
+  const response = await fetch(url, {
+    ...init,
+    headers: {
+      "X-Auth-Token": getStoreToken(),
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...init.headers,
+    },
+    // Gift certificate data is live; don't let Next cache it.
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new BigCommerceApiError(
+      response.status,
+      path,
+      `BigCommerce API request to ${path} failed: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  return (await response.json()) as T;
+}

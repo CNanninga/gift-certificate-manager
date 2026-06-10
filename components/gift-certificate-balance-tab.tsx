@@ -38,7 +38,8 @@ export function GiftCertificateBalanceTab({
   const [transferValue, setTransferValue] = useState(String(balance));
   const [confirmAddOpen, setConfirmAddOpen] = useState(false);
 
-  const canTransfer = gc.recipient.isRegisteredCustomer;
+  // Transfer to store credit requires a remaining balance to move.
+  const canTransfer = balance > 0;
 
   // React 18 has no useActionState / function-valued form actions, so the
   // Refill form calls the "use server" action directly from its submit handler,

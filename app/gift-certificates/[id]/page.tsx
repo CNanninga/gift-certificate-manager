@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getGiftCertificateById } from "@/data/mock-gift-certificates";
+import { getGiftCertificateById } from "@/lib/bigcommerce/gift-certificates";
 import { GiftCertificateDetail } from "@/components/gift-certificate-detail";
 
 interface GiftCertificateDetailPageProps {
@@ -10,7 +10,7 @@ export default async function GiftCertificateDetailPage({
   params,
 }: GiftCertificateDetailPageProps) {
   const { id } = await params;
-  const giftCertificate = getGiftCertificateById(id);
+  const giftCertificate = await getGiftCertificateById(id);
 
   if (!giftCertificate) {
     notFound();

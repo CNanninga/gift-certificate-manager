@@ -1,11 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type {
-  GiftCertificate,
-  GiftCertificateStatus,
-  RecipientParty,
-} from "@/types";
+import type { GiftCertificate, GiftCertificateStatus, Party } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { GIFT_CERTIFICATE_STATUSES } from "@/lib/gift-certificate-filters";
 import { Button, Modal, Panel, Select } from "@/components/ui";
@@ -15,31 +11,12 @@ interface GiftCertificateDetailsTabProps {
   giftCertificate: GiftCertificate;
 }
 
-/**
- * Sender/recipient panel. The "Account email" row is only shown when an
- * `accountEmail` is provided (i.e. for the sender) — recipients are matched by
- * email, so their account email always equals the certificate email.
- */
-function PartyPanel({
-  title,
-  party,
-  accountEmail,
-}: {
-  title: string;
-  party: RecipientParty;
-  accountEmail?: string | null;
-}) {
+/** Sender/recipient panel — the name and email printed on the certificate. */
+function PartyPanel({ title, party }: { title: string; party: Party }) {
   return (
     <Panel header={title}>
-      <FieldRow label="Registered customer">
-        {party.isRegisteredCustomer ? "Yes" : "No"}
-      </FieldRow>
       <FieldRow label="Name on gift certificate">{party.name}</FieldRow>
       <FieldRow label="Email on gift certificate">{party.email}</FieldRow>
-      <FieldRow label="Account name">{party.accountName ?? "-"}</FieldRow>
-      {accountEmail !== undefined && (
-        <FieldRow label="Account email">{accountEmail ?? "-"}</FieldRow>
-      )}
     </Panel>
   );
 }
@@ -80,11 +57,7 @@ export function GiftCertificateDetailsTab({
         </FieldRow>
       </Panel>
 
-      <PartyPanel
-        title="Sender"
-        party={gc.sender}
-        accountEmail={gc.sender.accountEmail}
-      />
+      <PartyPanel title="Sender" party={gc.sender} />
       <PartyPanel title="Recipient" party={gc.recipient} />
 
       <div className="flex justify-end gap-2">

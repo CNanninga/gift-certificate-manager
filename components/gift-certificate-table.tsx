@@ -96,18 +96,6 @@ export function GiftCertificateTable({
       render: (gc) => gc.recipient.email,
     },
     {
-      hash: "hasRegisteredCustomer",
-      header: "Registered Customer",
-      sortable: true,
-      align: "center",
-      render: (gc) => (
-        <Badge
-          label={gc.recipient.isRegisteredCustomer ? "Yes" : "No"}
-          variant={gc.recipient.isRegisteredCustomer ? "success" : "secondary"}
-        />
-      ),
-    },
-    {
       hash: "purchaseDate",
       header: "Purchased",
       sortable: true,

@@ -4,7 +4,6 @@ import { Button, Input, Panel, Select } from "@/components/ui";
 import {
   GIFT_CERTIFICATE_STATUSES,
   type GiftCertificateFilters,
-  type RegisteredFilter,
   type StatusFilter,
 } from "@/lib/gift-certificate-filters";
 
@@ -71,16 +70,6 @@ export function GiftCertificateFiltersPanel({
           placeholder="Email contains…"
           value={filters.recipientEmail}
           onChange={(event) => update("recipientEmail", event.target.value)}
-        />
-        <Select<RegisteredFilter>
-          label="Registered customer"
-          options={[
-            { value: "all", label: "Any" },
-            { value: "yes", label: "Yes" },
-            { value: "no", label: "No" },
-          ]}
-          value={filters.registered}
-          onValueChange={(value) => update("registered", value)}
         />
         <Select<StatusFilter>
           label="Status"
