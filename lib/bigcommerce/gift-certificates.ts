@@ -10,6 +10,7 @@ import {
 import { getDataSourceMode } from "@/lib/bigcommerce/auth";
 import { mockGiftCertificates } from "@/data/mock-gift-certificates";
 import {
+  emptyFilters,
   filterGiftCertificates,
   sortGiftCertificates,
   type GiftCertificateFilters,
@@ -93,17 +94,58 @@ function applyQuery(
 }
 
 // --- Real REST API (used by both "static" and "multiTenant" modes) ---
-// The v2 list endpoint only sorts by `id`, so the full set is retrieved (up to
-// the API's max page size) and our richer filtering/sorting is applied in code.
+
+/**
+ * Maps the filters the v2 list endpoint supports as query params onto the API
+ * parameter names, so they're applied server-side (not on the fetched page).
+ * Supported: code, recipient name (to_name), recipient email (to_email).
+ */
+function buildListQuery(filters: GiftCertificateFilters): string {
+  const params = new URLSearchParams({ limit: "250" });
+  if (filters.code.trim()) {
+    params.set("code", filters.code.trim());
+  }
+  if (filters.recipientName.trim()) {
+    params.set("to_name", filters.recipientName.trim());
+  }
+  if (filters.recipientEmail.trim()) {
+    params.set("to_email", filters.recipientEmail.trim());
+  }
+  return params.toString();
+}
+
+/**
+ * The filters the v2 endpoint has NO query param for, so they must be applied
+ * to the fetched results: status, balance range, and purchase-date range.
+ * (Sorting is also done in code — the list endpoint only sorts by `id`, which
+ * isn't one of our sortable columns.)
+ */
+function unsupportedFilters(
+  filters: GiftCertificateFilters,
+): GiftCertificateFilters {
+  return {
+    ...emptyFilters,
+    status: filters.status,
+    balanceMin: filters.balanceMin,
+    balanceMax: filters.balanceMax,
+    purchaseDateFrom: filters.purchaseDateFrom,
+    purchaseDateTo: filters.purchaseDateTo,
+  };
+}
 
 async function fetchFromApi(
   filters: GiftCertificateFilters,
   sort: SortState,
 ): Promise<GiftCertificateQueryResult> {
   const raw = await bigCommerceRequest<BigCommerceGiftCertificate[]>(
-    "/v2/gift_certificates?limit=250",
+    `/v2/gift_certificates?${buildListQuery(filters)}`,
   );
-  return applyQuery(raw.map(mapGiftCertificate), filters, sort);
+  const mapped = raw.map(mapGiftCertificate);
+  const items = sortGiftCertificates(
+    filterGiftCertificates(mapped, unsupportedFilters(filters)),
+    sort,
+  );
+  return { items, totalCount: mapped.length };
 }
 
 async function getByIdFromApi(
