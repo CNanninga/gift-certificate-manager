@@ -18,6 +18,11 @@ export class BigCommerceApiError extends Error {
  * Thin wrapper for BigCommerce REST requests. Prefixes the store-scoped base
  * URL, attaches auth + JSON headers, and parses the JSON response. `path`
  * should start with a version segment, e.g. `/v2/gift_certificates`.
+ *
+ * Caching is intentionally not decided here: callers pass the appropriate
+ * `init` (including Next's `cache` / `next: { revalidate, tags }` options) per
+ * request type. `init` is spread first so caller options win, while the auth
+ * and JSON headers are always applied.
  */
 export async function bigCommerceRequest<T>(
   path: string,
@@ -33,8 +38,6 @@ export async function bigCommerceRequest<T>(
       "Content-Type": "application/json",
       ...init.headers,
     },
-    // Gift certificate data is live; don't let Next cache it.
-    cache: "no-store",
   });
 
   if (!response.ok) {

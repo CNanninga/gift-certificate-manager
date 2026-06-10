@@ -95,6 +95,17 @@ function applyQuery(
 
 // --- Real REST API (used by both "static" and "multiTenant" modes) ---
 
+// Fetch-level caching, configured per request type. Tags allow targeted
+// revalidation (revalidateTag) once mutations land. Tune the windows freely.
+/** Cache tag covering all gift certificate data (list + every detail). */
+const GIFT_CERTIFICATES_TAG = "gift-certificates";
+/** Per-certificate cache tag for targeted detail revalidation. */
+const giftCertificateTag = (id: string) => `gift-certificate:${id}`;
+/** The listing changes as certificates are created/redeemed. */
+const LIST_REVALIDATE_SECONDS = 60;
+/** A single certificate's balance/status can change on redemption. */
+const DETAIL_REVALIDATE_SECONDS = 30;
+
 /**
  * Maps the filters the v2 list endpoint supports as query params onto the API
  * parameter names, so they're applied server-side (not on the fetched page).
@@ -139,6 +150,12 @@ async function fetchFromApi(
 ): Promise<GiftCertificateQueryResult> {
   const raw = await bigCommerceRequest<BigCommerceGiftCertificate[]>(
     `/v2/gift_certificates?${buildListQuery(filters)}`,
+    {
+      next: {
+        revalidate: LIST_REVALIDATE_SECONDS,
+        tags: [GIFT_CERTIFICATES_TAG],
+      },
+    },
   );
   const mapped = raw.map(mapGiftCertificate);
   const items = sortGiftCertificates(
@@ -154,6 +171,12 @@ async function getByIdFromApi(
   try {
     const raw = await bigCommerceRequest<BigCommerceGiftCertificate>(
       `/v2/gift_certificates/${id}`,
+      {
+        next: {
+          revalidate: DETAIL_REVALIDATE_SECONDS,
+          tags: [GIFT_CERTIFICATES_TAG, giftCertificateTag(id)],
+        },
+      },
     );
     return mapGiftCertificate(raw);
   } catch (error) {
