@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import { Box, H1, Panel, Text } from "@bigcommerce/big-design";
 import type { GiftCertificate } from "@/types";
 import { GiftCertificateFiltersPanel } from "@/components/gift-certificate-filters";
@@ -43,7 +43,6 @@ export function GiftCertificatesView({
   sort,
 }: GiftCertificatesViewProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
 
   // Local mirror of the filter form so inputs stay responsive while the
@@ -74,10 +73,18 @@ export function GiftCertificatesView({
     nextFilters: GiftCertificateFilters,
     nextSort: SortState,
   ) {
-    const queryString = toSearchParams(nextFilters, nextSort).toString();
-    const url = queryString ? `${pathname}?${queryString}` : pathname;
+    // Build a next/router query object from the serialized filter/sort params.
+    // Pushing a `{ pathname, query }` object re-runs getServerSideProps, which
+    // re-filters/sorts on the server — the URL stays the source of truth.
+    const params = toSearchParams(nextFilters, nextSort);
+    const query: Record<string, string> = {};
+    for (const [key, value] of params.entries()) {
+      query[key] = value;
+    }
     startTransition(() => {
-      router.replace(url, { scroll: false });
+      router.replace({ pathname: router.pathname, query }, undefined, {
+        scroll: false,
+      });
     });
   }
 

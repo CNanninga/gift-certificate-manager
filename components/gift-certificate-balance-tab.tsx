@@ -15,11 +15,7 @@ import {
 import type { GiftCertificate } from "@/types";
 import { formatCurrency } from "@/lib/format";
 import { FieldRow } from "@/components/detail-field";
-import { refillGiftCertificate } from "@/app/gift-certificates/[id]/actions";
-import {
-  initialRefillState,
-  type RefillActionState,
-} from "@/app/gift-certificates/[id]/refill-state";
+import type { RefillResponse } from "@/pages/api/gift-certificates/[id]/refill";
 
 interface GiftCertificateBalanceTabProps {
   giftCertificate: GiftCertificate;
@@ -50,38 +46,51 @@ export function GiftCertificateBalanceTab({
 
   const canTransfer = gc.recipient.isRegisteredCustomer;
 
-  // Refill is wired to the "use server" action via a form. React 18 (stable)
-  // has no useActionState/useFormState/useFormStatus, so we drive the result
-  // state and the pending state with useState and call the server action
-  // directly on submit. (startTransition does not await async callbacks on
-  // React 18, so an explicit pending flag is used instead.) The BigDesign
-  // alerts manager surfaces a toast on completion.
+  // Refill posts to an API route via fetch. Pages Router has no server
+  // actions (and React 18 has no useActionState/useFormState/useFormStatus), so
+  // we drive the pending state with useState and surface the result through the
+  // BigDesign alerts manager on completion.
   const [alertsManager] = useState(() => createAlertsManager());
-  const [refillState, setRefillState] =
-    useState<RefillActionState>(initialRefillState);
+  const [refillResult, setRefillResult] = useState<{
+    message: string;
+    key: number;
+  } | null>(null);
   const [refillPending, setRefillPending] = useState(false);
 
   async function submitRefill(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const amount = String(formData.get("amount") ?? "");
     setRefillPending(true);
     try {
-      const next = await refillGiftCertificate(refillState, formData);
-      setRefillState(next);
+      const response = await fetch(
+        `/api/gift-certificates/${encodeURIComponent(gc.id)}/refill`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount }),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Refill failed with status ${response.status}`);
+      }
+      const data: RefillResponse = await response.json();
+      // Bump the key so the alert effect fires even on identical resubmits.
+      setRefillResult({ message: data.message, key: Date.now() });
     } finally {
       setRefillPending(false);
     }
   }
 
   useEffect(() => {
-    if (refillState.status === "success") {
+    if (refillResult) {
       alertsManager.add({
         type: "success",
         autoDismiss: true,
-        messages: [{ text: refillState.message }],
+        messages: [{ text: refillResult.message }],
       });
     }
-  }, [refillState, alertsManager]);
+  }, [refillResult, alertsManager]);
 
   // Selecting an action reveals its inputs and hides the others. Re-selecting
   // the active action collapses it. Inputs reset to defaults on (re)selection.

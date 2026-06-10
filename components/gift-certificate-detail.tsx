@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import { Box, H1, Link, Tabs, Text } from "@bigcommerce/big-design";
 import type { GiftCertificate } from "@/types";
 import { GiftCertificateDetailsTab } from "@/components/gift-certificate-details-tab";
