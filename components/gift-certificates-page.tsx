@@ -1,6 +1,8 @@
 import {
+  GiftCertificateFilters,
   searchParamsToFilters,
   searchParamsToSort,
+  SortState,
 } from "@/lib/gift-certificate-filters";
 import { GiftCertificates } from "@/components/gift-certificates";
 
@@ -32,9 +34,26 @@ function toURLSearchParams(
 export async function GiftCertificatesPage({
   searchParams,
 }: GiftCertificatesPageProps) {
-  const params = toURLSearchParams(await searchParams);
-  const filters = searchParamsToFilters(params);
-  const sort = searchParamsToSort(params);
+  // const params = toURLSearchParams(await searchParams);
+  // const filters = searchParamsToFilters(params);
+  // const sort = searchParamsToSort(params);
+
+  const filters = {
+    code: "",
+    recipientName: "",
+    recipientEmail: "",
+    registered: "all",
+    status: "all",
+    balanceMin: null,
+    balanceMax: null,
+    purchaseDateFrom: "",
+    purchaseDateTo: "",
+  } as GiftCertificateFilters;
+
+  const sort = {
+    column: "purchaseDate",
+    direction: "desc",
+  } as SortState;
 
   return <GiftCertificates filters={filters} sort={sort} />;
 }
