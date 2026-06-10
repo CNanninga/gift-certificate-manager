@@ -7,6 +7,8 @@ import {
   bigCommerceRequest,
   BigCommerceApiError,
 } from "@/lib/bigcommerce/client";
+import { getDataSourceMode } from "@/lib/bigcommerce/auth";
+import { mockGiftCertificates } from "@/data/mock-gift-certificates";
 import {
   filterGiftCertificates,
   sortGiftCertificates,
@@ -80,30 +82,31 @@ export interface GiftCertificateQueryResult {
   totalCount: number;
 }
 
-/**
- * Fetches gift certificates from the store and applies the requested filter and
- * sort. The v2 list endpoint only sorts by `id`, so the full set is retrieved
- * (up to the API's max page size) and our richer filtering/sorting is applied
- * in code.
- */
-export async function fetchGiftCertificates(
+/** Applies the requested filter/sort to a full set of certificates. */
+function applyQuery(
+  all: GiftCertificate[],
+  filters: GiftCertificateFilters,
+  sort: SortState,
+): GiftCertificateQueryResult {
+  const items = sortGiftCertificates(filterGiftCertificates(all, filters), sort);
+  return { items, totalCount: all.length };
+}
+
+// --- Real REST API (used by both "static" and "multiTenant" modes) ---
+// The v2 list endpoint only sorts by `id`, so the full set is retrieved (up to
+// the API's max page size) and our richer filtering/sorting is applied in code.
+
+async function fetchFromApi(
   filters: GiftCertificateFilters,
   sort: SortState,
 ): Promise<GiftCertificateQueryResult> {
   const raw = await bigCommerceRequest<BigCommerceGiftCertificate[]>(
     "/v2/gift_certificates?limit=250",
   );
-  const all = raw.map(mapGiftCertificate);
-  const items = sortGiftCertificates(
-    filterGiftCertificates(all, filters),
-    sort,
-  );
-
-  return { items, totalCount: all.length };
+  return applyQuery(raw.map(mapGiftCertificate), filters, sort);
 }
 
-/** Looks up a single gift certificate by id; undefined when not found (404). */
-export async function getGiftCertificateById(
+async function getByIdFromApi(
   id: string,
 ): Promise<GiftCertificate | undefined> {
   try {
@@ -116,5 +119,49 @@ export async function getGiftCertificateById(
       return undefined;
     }
     throw error;
+  }
+}
+
+// --- Mock implementation (used by "mock" mode) ---
+
+function fetchFromMock(
+  filters: GiftCertificateFilters,
+  sort: SortState,
+): Promise<GiftCertificateQueryResult> {
+  return Promise.resolve(applyQuery(mockGiftCertificates, filters, sort));
+}
+
+function getByIdFromMock(id: string): Promise<GiftCertificate | undefined> {
+  return Promise.resolve(mockGiftCertificates.find((gc) => gc.id === id));
+}
+
+// --- Public API: three-way switch on the configured data source ---
+
+/** Fetches gift certificates from the active data source, filtered and sorted. */
+export async function fetchGiftCertificates(
+  filters: GiftCertificateFilters,
+  sort: SortState,
+): Promise<GiftCertificateQueryResult> {
+  switch (getDataSourceMode()) {
+    case "mock":
+      return fetchFromMock(filters, sort);
+    case "static":
+    case "multiTenant":
+      // Both hit the real REST API; only the token source differs (see auth.ts:
+      // static env token vs. per-store OAuth, the latter not yet implemented).
+      return fetchFromApi(filters, sort);
+  }
+}
+
+/** Looks up a single gift certificate by id; undefined when not found. */
+export async function getGiftCertificateById(
+  id: string,
+): Promise<GiftCertificate | undefined> {
+  switch (getDataSourceMode()) {
+    case "mock":
+      return getByIdFromMock(id);
+    case "static":
+    case "multiTenant":
+      return getByIdFromApi(id);
   }
 }
