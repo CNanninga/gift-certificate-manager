@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { storeHashFromContext, verifySignedPayload } from "@/lib/bigcommerce/oauth";
+import { appUrl, storeHashFromContext, verifySignedPayload } from "@/lib/bigcommerce/oauth";
 import { getTokenStore } from "@/lib/storage";
 import { createSession, sessionCookie } from "@/lib/session";
 
@@ -39,9 +39,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       storeHash,
     });
 
-    const response = NextResponse.redirect(new URL("/", request.url), {
-      status: 302,
-    });
+    const response = NextResponse.redirect(appUrl("/"), { status: 302 });
     response.cookies.set(sessionCookie(sessionToken));
     return response;
   } catch (error) {
