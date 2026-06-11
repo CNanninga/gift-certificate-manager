@@ -28,12 +28,12 @@ export async function bigCommerceRequest<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
-  const url = `${API_ORIGIN}/stores/${getStoreHash()}${path}`;
+  const url = `${API_ORIGIN}/stores/${await getStoreHash()}${path}`;
 
   const response = await fetch(url, {
     ...init,
     headers: {
-      "X-Auth-Token": getStoreToken(),
+      "X-Auth-Token": await getStoreToken(),
       Accept: "application/json",
       "Content-Type": "application/json",
       ...init.headers,
