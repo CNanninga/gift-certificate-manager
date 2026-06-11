@@ -40,8 +40,6 @@ export async function bigCommerceRequest<T>(
     },
   });
 
-  console.log('[fetch]', url, response);
-
   if (!response.ok) {
     throw new BigCommerceApiError(
       response.status,
