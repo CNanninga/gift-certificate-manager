@@ -1,32 +1,47 @@
 import { Suspense } from "react";
-import { after } from "next/server";
 import { GiftCertificatesPage } from "@/components/gift-certificates-page";
+import { readSession } from "@/lib/session";
 
 interface HomeProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default function Home({ searchParams }: HomeProps) {
-  // Test of `after`: schedule work to run once the response has finished. A
-  // short delay makes the deferral observable in the server log (the event
-  // lands a couple seconds after the response) while staying well within the
-  // Workers post-response execution window.
-  after(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 2_000));
-    console.log("Delayed event");
-  });
+export default async function Home({ searchParams }: HomeProps) {
+  // Reads the SameSite=None session cookie. Inside the BigCommerce iframe this
+  // confirms the cross-site cookie is delivered on navigations to the app.
+  const session = await readSession();
 
-  // GiftCertificatesPage reads dynamic search params, so it streams in behind a
-  // Suspense boundary while the static shell is served immediately.
   return (
-    <Suspense
-      fallback={
-        <p style={{ padding: "48px", textAlign: "center" }}>
-          Loading gift certificates…
-        </p>
-      }
-    >
-      <GiftCertificatesPage searchParams={searchParams} />
-    </Suspense>
+    <>
+      <div
+        style={{
+          padding: "12px 24px",
+          background: "#f5f5f5",
+          borderBottom: "1px solid #e0e0e0",
+          fontSize: "14px",
+        }}
+      >
+        {session ? (
+          <span>
+            Signed in as <strong>{session.name}</strong> — store{" "}
+            <strong>{session.storeHash}</strong>
+          </span>
+        ) : (
+          <span>No active session.</span>
+        )}
+      </div>
+
+      {/* GiftCertificatesPage reads dynamic search params, so it streams in
+          behind a Suspense boundary. */}
+      <Suspense
+        fallback={
+          <p style={{ padding: "48px", textAlign: "center" }}>
+            Loading gift certificates…
+          </p>
+        }
+      >
+        <GiftCertificatesPage searchParams={searchParams} />
+      </Suspense>
+    </>
   );
 }
