@@ -29,28 +29,36 @@
 			"binding": "NEXT_INC_CACHE_R2_BUCKET"
 		}
 	],
-
-  // DO Queue
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "NEXT_CACHE_DO_QUEUE",
-        "class_name": "DOQueueHandler",
-      },
-    ],
-  },
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["DOQueueHandler"],
-    },
-  ],
-
-  "observability": {
-    "logs": {
-      "enabled": true,
-      "invocation_logs": true
-    },
-    "traces": {}
-  }
+	// DO Queue
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "NEXT_CACHE_DO_QUEUE",
+				"class_name": "DOQueueHandler",
+			},
+		],
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"DOQueueHandler"
+			],
+		},
+	],
+	// Database
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "gc-manager-db",
+			"database_id": "5dfd2a0c-40bf-4ca7-836e-fbcf53bf4835"
+		},
+	],
+	"observability": {
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true
+		},
+		"traces": {}
+	}
 }
