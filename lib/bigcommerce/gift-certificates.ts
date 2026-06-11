@@ -102,9 +102,9 @@ const GIFT_CERTIFICATES_TAG = "gift-certificates";
 /** Per-certificate cache tag for targeted detail revalidation. */
 const giftCertificateTag = (id: string) => `gift-certificate:${id}`;
 /** The listing changes as certificates are created/redeemed. */
-const LIST_REVALIDATE_SECONDS = 60;
+const LIST_REVALIDATE_SECONDS = 300;
 /** A single certificate's balance/status can change on redemption. */
-const DETAIL_REVALIDATE_SECONDS = 30;
+const DETAIL_REVALIDATE_SECONDS = 300;
 
 /**
  * Maps the filters the v2 list endpoint supports as query params onto the API
