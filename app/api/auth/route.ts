@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { exchangeCode, storeHashFromContext } from "@/lib/bigcommerce/oauth";
+import { appUrl, exchangeCode, storeHashFromContext } from "@/lib/bigcommerce/oauth";
 import { getTokenStore } from "@/lib/storage";
 
 /**
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // BigCommerce loads the app (calling /api/load) right after install, where
     // the session cookie is minted — so a redirect to the app root is enough.
-    return NextResponse.redirect(new URL("/", request.url), { status: 302 });
+    return NextResponse.redirect(appUrl("/"), { status: 302 });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ status: "error", message }, { status: 500 });

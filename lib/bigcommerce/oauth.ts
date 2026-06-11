@@ -53,6 +53,15 @@ export async function exchangeCode(
 ): Promise<ExchangeCodeResult> {
   const redirectUri =
     process.env.AUTH_CALLBACK ?? `${requireEnv("APP_ORIGIN")}/api/auth`;
+  console.log({
+    client_id: requireEnv("APP_CLIENT_ID"),
+    client_secret: requireEnv("APP_CLIENT_SECRET"),
+    code: params.code,
+    context: params.context,
+    scope: params.scope,
+    grant_type: "authorization_code",
+    redirect_uri: redirectUri,
+  });
 
   const response = await fetch(`${BC_LOGIN_URL}/oauth2/token`, {
     method: "POST",
@@ -109,4 +118,14 @@ export async function verifySignedPayload(token: string): Promise<SignedPayload>
 /** Extracts the store hash from a `stores/{hash}` context (tolerates a bare hash). */
 export function storeHashFromContext(context: string): string {
   return context.split("/")[1] ?? context;
+}
+
+/**
+ * Builds an absolute app URL from `APP_ORIGIN`. Use this for redirects instead
+ * of deriving the origin from `request.url`: behind an HTTPS tunnel the request
+ * Next.js sees is the internal dev host (e.g. `http://localhost:3000`), so a
+ * request-derived redirect would leak `:3000` into the `Location` header.
+ */
+export function appUrl(path = "/"): URL {
+  return new URL(path, requireEnv("APP_ORIGIN"));
 }
