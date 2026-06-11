@@ -1,14 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
+import { storeHashFromContext, verifySignedPayload } from "@/lib/bigcommerce/oauth";
+import { getTokenStore } from "@/lib/storage";
 
 /**
  * BigCommerce load callback (`/api/load`). Every time the app is opened inside
  * the BigCommerce control panel, BigCommerce redirects here with a
- * `signed_payload_jwt`. This skeleton just acknowledges it; JWT verification
- * and the session cookie are wired up in later stages.
+ * `signed_payload_jwt`. We verify it, identify the store + user, and confirm
+ * the store is installed. The session cookie is added in a later stage.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const signedPayloadJwt =
-    request.nextUrl.searchParams.get("signed_payload_jwt");
+  const token = request.nextUrl.searchParams.get("signed_payload_jwt");
 
-  return NextResponse.json({ status: "ok", received: Boolean(signedPayloadJwt) });
+  if (!token) {
+    return NextResponse.json(
+      { status: "error", message: "Missing signed_payload_jwt" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const payload = await verifySignedPayload(token);
+    const storeHash = storeHashFromContext(payload.sub);
+
+    const store = await getTokenStore();
+    await store.ensureSchema();
+    const storedToken = await store.getStoreToken(storeHash);
+    if (!storedToken) {
+      return NextResponse.json(
+        { status: "error", message: "Store is not installed" },
+        { status: 403 },
+      );
+    }
+
+    return NextResponse.redirect(new URL("/", request.url), { status: 302 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ status: "error", message }, { status: 500 });
+  }
 }
