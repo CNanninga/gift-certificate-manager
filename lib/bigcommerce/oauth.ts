@@ -53,15 +53,6 @@ export async function exchangeCode(
 ): Promise<ExchangeCodeResult> {
   const redirectUri =
     process.env.AUTH_CALLBACK ?? `${requireEnv("APP_ORIGIN")}/api/auth`;
-  console.log({
-    client_id: requireEnv("APP_CLIENT_ID"),
-    client_secret: requireEnv("APP_CLIENT_SECRET"),
-    code: params.code,
-    context: params.context,
-    scope: params.scope,
-    grant_type: "authorization_code",
-    redirect_uri: redirectUri,
-  });
 
   const response = await fetch(`${BC_LOGIN_URL}/oauth2/token`, {
     method: "POST",

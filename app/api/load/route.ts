@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { appUrl, storeHashFromContext, verifySignedPayload } from "@/lib/bigcommerce/oauth";
+import { storeHashFromContext, verifySignedPayload } from "@/lib/bigcommerce/oauth";
 import { getTokenStore } from "@/lib/storage";
-import { createSession, sessionCookie } from "@/lib/session";
+import { startSessionRedirect } from "@/lib/session";
 
 /**
  * BigCommerce load callback (`/api/load`). Every time the app is opened inside
@@ -33,15 +33,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const sessionToken = await createSession({
+    return startSessionRedirect({
       userId: payload.user.id,
       name: payload.user.email,
       storeHash,
     });
-
-    const response = NextResponse.redirect(appUrl("/"), { status: 302 });
-    response.cookies.set(sessionCookie(sessionToken));
-    return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ status: "error", message }, { status: 500 });

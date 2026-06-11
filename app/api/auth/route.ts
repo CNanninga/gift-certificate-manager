@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { appUrl, exchangeCode, storeHashFromContext } from "@/lib/bigcommerce/oauth";
+import { exchangeCode, storeHashFromContext } from "@/lib/bigcommerce/oauth";
 import { getTokenStore } from "@/lib/storage";
+import { startSessionRedirect } from "@/lib/session";
 
 /**
  * BigCommerce OAuth install callback (`/api/auth`). After a merchant authorizes
@@ -39,9 +40,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
     await store.linkStoreUser(storeHash, result.user.id);
 
-    // BigCommerce loads the app (calling /api/load) right after install, where
-    // the session cookie is minted — so a redirect to the app root is enough.
-    return NextResponse.redirect(appUrl("/"), { status: 302 });
+    // Start the session here too: on fresh install BigCommerce drops the user
+    // straight at the app root, not always via /api/load.
+    return startSessionRedirect({
+      userId: result.user.id,
+      name: result.user.email,
+      storeHash,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ status: "error", message }, { status: 500 });

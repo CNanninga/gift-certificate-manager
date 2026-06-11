@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import { jwtVerify, SignJWT } from "jose";
+import { appUrl } from "@/lib/bigcommerce/oauth";
 
 /**
  * The user's app session, carried in a JWT cookie.
@@ -77,4 +79,19 @@ export function sessionCookie(token: string) {
     path: "/",
     maxAge: SESSION_TTL_SECONDS,
   };
+}
+
+/**
+ * Mints a session JWT, sets it as the session cookie, and returns a redirect to
+ * the app root. Both OAuth callbacks use this: `/api/auth` starts a session on
+ * fresh install (BigCommerce drops the user straight at the app, not always via
+ * `/api/load`), and `/api/load` (re)starts it on every subsequent open.
+ */
+export async function startSessionRedirect(
+  data: SessionData,
+): Promise<NextResponse> {
+  const token = await createSession(data);
+  const response = NextResponse.redirect(appUrl("/"), { status: 302 });
+  response.cookies.set(sessionCookie(token));
+  return response;
 }
