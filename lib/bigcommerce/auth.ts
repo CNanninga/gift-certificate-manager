@@ -1,19 +1,21 @@
 /**
  * Resolves the BigCommerce store credentials used for REST requests.
  *
- * Today this runs in "static mode": a single store's hash + API token come
- * from environment variables. It's structured so that multi-tenant OAuth token
- * storage can slot in later behind the same getters — when STATIC_MODE is off,
- * the credentials would be looked up per request (e.g. by store hash from the
- * session). That path is stubbed to throw for now.
+ * In "static mode" a single store's hash + API token come from environment
+ * variables. When STATIC_MODE is off ("multiTenant"), the credentials are
+ * resolved per request from the OAuth session + token storage: the store hash
+ * comes from the session cookie and the token from the store's stored record.
  */
+
+import { readSession } from "@/lib/session";
+import { getTokenStore } from "@/lib/storage";
 
 /**
  * Where gift certificate data comes from:
  *   - "mock"        → the in-repo mock dataset (no network); useful for tests.
  *   - "static"      → real REST API using a single static token (STATIC_MODE).
- *   - "multiTenant" → real REST API using a per-store OAuth token (not yet
- *                     implemented; the token getter throws).
+ *   - "multiTenant" → real REST API using a per-store OAuth token resolved from
+ *                     the session + token storage.
  */
 export type DataSourceMode = "mock" | "static" | "multiTenant";
 
@@ -36,7 +38,7 @@ export function getDataSourceMode(): DataSourceMode {
 }
 
 /** The store hash used in the API URL (`/stores/:store_hash/...`). */
-export function getStoreHash(): string {
+export async function getStoreHash(): Promise<string> {
   if (isStaticMode()) {
     const storeHash = process.env.STATIC_STORE_HASH;
     if (!storeHash) {
@@ -45,12 +47,16 @@ export function getStoreHash(): string {
     return storeHash;
   }
 
-  // TODO: resolve the active store hash from multi-tenant context.
-  throw new Error("Multi-tenant store resolution is not implemented yet");
+  // Multi-tenant: the active store comes from the signed session cookie.
+  const session = await readSession();
+  if (!session?.storeHash) {
+    throw new Error("No active session: cannot resolve the store hash");
+  }
+  return session.storeHash;
 }
 
 /** The API access token sent as the `X-Auth-Token` header. */
-export function getStoreToken(): string {
+export async function getStoreToken(): Promise<string> {
   if (isStaticMode()) {
     const token = process.env.STATIC_STORE_TOKEN;
     if (!token) {
@@ -59,6 +65,11 @@ export function getStoreToken(): string {
     return token;
   }
 
-  // TODO: look up the per-store OAuth token from token storage.
-  throw new Error("Multi-tenant OAuth token retrieval is not implemented yet");
+  // Multi-tenant: look up the per-store OAuth token persisted at install.
+  const store = await getTokenStore();
+  const token = await store.getStoreToken(await getStoreHash());
+  if (!token) {
+    throw new Error("No stored OAuth token for the active store");
+  }
+  return token;
 }
