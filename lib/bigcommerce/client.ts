@@ -40,10 +40,7 @@ export async function bigCommerceRequest<T>(
     },
   });
 
-  console.log('[fetch]', url, {
-    status: response.status,
-    cache: response.headers.get('x-nextjs-cache'),
-  });
+  console.log('[fetch]', url, response);
 
   if (!response.ok) {
     throw new BigCommerceApiError(
