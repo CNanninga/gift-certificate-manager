@@ -45,4 +45,12 @@
       "new_sqlite_classes": ["DOQueueHandler"],
     },
   ],
+
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    },
+    "traces": {}
+  }
 }
